@@ -1,0 +1,2437 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Mollion</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout concept: a cutaway shaft on the left, a field log on the right; stacked on phones.
+   One look only: a dark underground world lit by a single amber headlamp. */
+:root {
+  color-scheme: dark;
+  --bg: #0c0809;
+  --panel: #150f10;
+  --panel-2: #1d1415;
+  --line: #3a2a28;
+  --line-2: #55423c;
+  --ink: #f5ebd9;
+  --ink-2: #cdbda5;
+  --ink-3: #a39380;
+  --lamp: #ffb938;
+  --lamp-2: #ffd47a;
+  --lamp-ink: #1a1004;
+  --warn: #ff8a76;
+  --f0: #a99d90;
+  --f1: #d9803f;
+  --f2: #d5dde8;
+  --f3: #f7c948;
+  --f4: #b684ff;
+  --f5: #ff5468;
+  --f6: #74e8ff;
+  --f7: #ff6fcb;
+  --font-display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 15px/1.45 var(--font-display);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--lamp); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.mono { font-family: var(--font-mono); }
+
+.app { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+
+/* ── top bar ── */
+.top {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 8px 16px; background: var(--bg); border-bottom: 1px solid var(--line); position: relative; z-index: 3;
+}
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.logo { width: 28px; height: 28px; flex: none; }
+.wordmark { font-weight: 900; font-stretch: 125%; letter-spacing: .09em; font-size: 18px; line-height: 1; }
+.tagline { font: 500 11px/1 var(--font-mono); color: var(--ink-3); letter-spacing: .05em; white-space: nowrap; }
+.top-actions { display: flex; gap: 6px; }
+.icon-btn {
+  width: 38px; height: 38px; display: grid; place-items: center; border-radius: 4px;
+  background: transparent; border: 1px solid var(--line); color: var(--ink-2);
+}
+.icon-btn:hover { border-color: var(--line-2); color: var(--ink); }
+.icon-btn[aria-pressed="false"] { color: var(--ink-3); }
+.icon-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── layout ── */
+.layout { display: grid; grid-template-rows: clamp(190px, 34%, 320px) minmax(0, 1fr); min-height: 0; }
+.stage { position: relative; overflow: hidden; background: #05030a; min-height: 0; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.log { overflow-y: auto; background: var(--panel); border-top: 1px solid var(--line); min-height: 0; }
+.log-inner { width: 100%; max-width: 520px; margin: 0 auto; padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; }
+@media (min-width: 880px) {
+  .layout { grid-template-columns: minmax(0, 1fr) minmax(440px, 540px); grid-template-rows: minmax(0, 1fr); }
+  .log { border-top: 0; border-left: 1px solid var(--line); }
+  .log-inner { padding: 28px 24px; gap: 16px; }
+  .tagline { font-size: 12px; }
+}
+@media (max-width: 520px) { .tagline { display: none; } }
+
+/* ── HUD over the shaft ── */
+.hud {
+  position: absolute; left: 0; right: 0; top: 0; padding: 10px 14px 30px 52px;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+  background: linear-gradient(180deg, rgba(8, 4, 4, .82), rgba(8, 4, 4, 0)); pointer-events: none;
+}
+.k { font: 500 10px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+.hud-depth { display: grid; gap: 4px; }
+.hud-line { display: flex; align-items: baseline; gap: 6px; }
+.hud-num { font: 600 clamp(28px, 6.4vw, 46px)/1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em; text-shadow: 0 2px 10px rgba(0, 0, 0, .7); }
+.hud-unit { font: 500 14px/1 var(--font-mono); color: var(--ink-2); }
+.hud-right { text-align: right; display: grid; gap: 5px; justify-items: end; }
+.hud-stratum { font: 800 clamp(15px, 2.6vw, 20px)/1 var(--font-display); font-stretch: 112%; letter-spacing: .02em; color: var(--sc, var(--lamp-2)); text-shadow: 0 2px 8px rgba(0, 0, 0, .8); }
+.hud-best { font: 500 11px/1 var(--font-mono); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+.banner {
+  position: absolute; left: 52px; right: 14px; bottom: 9%; display: grid; gap: 2px; pointer-events: none;
+  opacity: 0; transform: translateY(-6px);
+}
+.banner.show { animation: banner 2.8s ease both; }
+.b-k { font: 500 11px/1 var(--font-mono); letter-spacing: .22em; color: var(--ink-2); }
+.b-n { font: 900 clamp(30px, 8vw, 54px)/1 var(--font-display); font-stretch: 125%; letter-spacing: .03em; text-transform: uppercase; color: var(--sc, var(--lamp)); text-shadow: 0 3px 18px rgba(0, 0, 0, .85); }
+.b-d { font: 500 12px/1 var(--font-mono); color: var(--ink-2); }
+@keyframes banner {
+  0% { opacity: 0; transform: translateY(-10px); }
+  12% { opacity: 1; transform: none; }
+  78% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(6px); }
+}
+
+/* ── shift strip ── */
+.shift { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.shift-l { display: flex; align-items: baseline; gap: 8px; }
+.shift-l .v { font: 600 15px/1 var(--font-mono); }
+.pips { display: flex; gap: 5px; }
+.pips i { width: 16px; height: 16px; border-radius: 3px; border: 1px solid var(--line-2); background: transparent; display: block; }
+.pips i.on { border-color: transparent; background: var(--pc); box-shadow: 0 0 10px -2px var(--pc); }
+.streak { margin-left: auto; display: flex; align-items: baseline; gap: 8px; }
+.streak .v { font: 600 14px/1 var(--font-mono); color: var(--lamp); }
+
+/* ── cards ── */
+.card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 18px 16px 16px; position: relative; }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.chip { font: 500 10px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; padding: 5px 8px; border: 1px solid var(--line-2); border-radius: 3px; color: var(--ink-2); }
+.prompt-text { margin: 0; font: 700 clamp(26px, 5.6vw, 38px)/1.08 var(--font-display); font-stretch: 108%; letter-spacing: -.01em; text-wrap: balance; }
+.prompt-text strong { color: var(--lamp); font-weight: 800; }
+.mod { display: inline-block; vertical-align: .18em; margin-left: 4px; font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; padding: 6px 9px; border: 1.5px dashed var(--lamp); border-radius: 3px; color: var(--lamp-2); }
+.mod b { color: var(--ink); font-weight: 600; font-size: 1.15em; letter-spacing: .04em; margin-left: 2px; }
+.prompt-sub { margin: 10px 0 0; color: var(--ink-3); font: 400 13px/1.4 var(--font-mono); }
+
+form { margin: 16px 0 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.input-row { display: flex; gap: 8px; }
+.input-row input {
+  flex: 1; min-width: 0; padding: 13px 14px; font: 500 20px/1.2 var(--font-display); color: var(--ink);
+  background: #0d0809; border: 1.5px solid var(--line-2); border-radius: 4px; caret-color: var(--lamp);
+}
+.input-row input::placeholder { color: #7d6e60; }
+.input-row input:focus { outline: none; border-color: var(--lamp); box-shadow: 0 0 0 3px rgba(255, 185, 56, .18); }
+.btn {
+  border: 0; border-radius: 4px; padding: 0 18px; min-height: 48px; font: 700 13px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase;
+  background: var(--lamp); color: var(--lamp-ink); white-space: nowrap;
+}
+.btn:hover { background: var(--lamp-2); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line-2); }
+.btn.ghost:hover { border-color: var(--ink-2); background: rgba(255, 255, 255, .04); }
+.msg { min-height: 20px; font: 400 13px/1.4 var(--font-mono); color: var(--warn); }
+.msg.info { color: var(--ink-2); }
+.msg button { background: transparent; border: 1px dashed var(--lamp); color: var(--lamp-2); border-radius: 3px; padding: 4px 8px; font: 600 13px/1.2 var(--font-mono); margin-left: 4px; }
+.aux { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.link { background: none; border: 0; padding: 6px 0; color: var(--ink-2); font: 500 12px/1.2 var(--font-mono); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-2); }
+.link:hover { color: var(--ink); }
+.link:disabled { opacity: .45; cursor: default; text-decoration: none; }
+
+/* ── result ── */
+.result { animation: rise .35s ease both; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.res-top { display: flex; align-items: center; gap: 14px; }
+.gem { width: 76px; height: 76px; flex: none; filter: drop-shadow(0 0 14px var(--c)); }
+.res-find { margin: 0 0 4px; font: 600 11px/1 var(--font-mono); letter-spacing: .2em; text-transform: uppercase; color: var(--c); }
+.res-answer { margin: 0; font: 800 clamp(26px, 6vw, 34px)/1.05 var(--font-display); font-stretch: 108%; overflow-wrap: anywhere; }
+.res-note { margin: 4px 0 0; color: var(--ink-3); font: 400 12px/1.3 var(--font-mono); }
+.res-rank { margin: 14px 0 6px; color: var(--ink-2); font: 400 13px/1.4 var(--font-mono); }
+.rbar { display: block; width: 100%; height: 30px; overflow: visible; }
+.res-gain { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 12px 0 0; padding-top: 12px; border-top: 1px dashed var(--line-2); }
+.res-m { font: 600 30px/1 var(--font-mono); color: var(--lamp); font-variant-numeric: tabular-nums; }
+.res-mods { color: var(--ink-3); font: 400 12px/1.3 var(--font-mono); }
+.res-others { margin: 14px 0 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 14px; font-size: 13px; }
+.res-others dt { color: var(--ink-3); font: 500 10px/1.9 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; }
+.res-others dd { margin: 0; color: var(--ink-2); overflow-wrap: anywhere; }
+.res-others dd.gemline { color: var(--f7); }
+.res-actions { margin-top: 16px; display: flex; gap: 10px; }
+.res-actions .btn { flex: 1; }
+.heart-banner { margin: -4px 0 12px; padding: 8px 10px; border: 1px solid var(--f7); border-radius: 3px; color: var(--f7); font: 700 12px/1.3 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; text-align: center; background: rgba(255, 111, 203, .08); }
+
+/* ── modals ── */
+.modal { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; background: rgba(6, 3, 3, .74); backdrop-filter: blur(3px); overflow-y: auto; }
+.modal-card { width: 100%; max-width: 480px; max-height: calc(100% - 8px); overflow-y: auto; background: var(--panel); border: 1px solid var(--line-2); border-radius: 6px; padding: 22px 20px 20px; box-shadow: 0 30px 80px rgba(0, 0, 0, .6); animation: rise .3s ease both; }
+.modal h2 { margin: 0 0 10px; font: 800 26px/1.05 var(--font-display); font-stretch: 112%; }
+.modal p { margin: 0 0 10px; color: var(--ink-2); }
+.modal ul { margin: 0 0 16px; padding: 0; list-style: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.modal li { position: relative; padding-left: 22px; color: var(--ink-2); }
+.modal li::before { content: ""; position: absolute; left: 0; top: .5em; width: 10px; height: 10px; border-radius: 2px; background: var(--lamp); transform: rotate(45deg) scale(.8); }
+.modal .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.modal .row .btn { flex: 1 1 140px; }
+.intro .big { font: 900 clamp(40px, 12vw, 64px)/.95 var(--font-display); font-stretch: 125%; letter-spacing: .05em; margin: 0; }
+.intro .sub { font: 500 13px/1.4 var(--font-mono); color: var(--lamp-2); letter-spacing: .06em; margin: 8px 0 18px; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 6px 0 16px; }
+.stat { border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; display: grid; gap: 6px; }
+.stat .v { font: 600 20px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.finds-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 14px; }
+.finds-row .gem { width: 38px; height: 38px; filter: none; }
+.rare-list { display: grid; gap: 8px; margin: 0 0 6px; padding: 0; list-style: none; max-height: 220px; overflow-y: auto; }
+.rare-list li { padding: 0; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: center; }
+.rare-list li::before { display: none; }
+.rare-list .gem { width: 26px; height: 26px; filter: none; }
+.rare-list .a { font-weight: 700; color: var(--ink); }
+.rare-list .q { color: var(--ink-3); font: 400 11px/1.3 var(--font-mono); }
+.share-box { width: 100%; resize: none; background: #0d0809; border: 1px solid var(--line-2); border-radius: 4px; color: var(--ink-2); font: 400 13px/1.4 var(--font-mono); padding: 10px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .banner.show { animation: none; opacity: 1; transform: none; }
+  .result, .modal-card { animation: none; }
+}
+
+/* ── shift log ── */
+.ledger { border-top: 1px dashed var(--line-2); padding-top: 14px; }
+.ledger-head { display: flex; justify-content: space-between; gap: 10px; }
+.ledger ol { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.ledger li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 14px; }
+.ledger .gem { width: 24px; height: 24px; filter: none; }
+.ledger .la { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ledger .la b { font-weight: 700; }
+.ledger .lq { color: var(--ink-3); font: 400 11px/1 var(--font-mono); margin-left: 8px; }
+.ledger .lm { font: 500 13px/1 var(--font-mono); color: var(--lamp); font-variant-numeric: tabular-nums; }
+.ledger .empty { color: var(--ink-3); font: 400 12px/1.5 var(--font-mono); }
+
+@media (max-height: 560px) {
+  .layout { grid-template-rows: clamp(104px, 26%, 170px) minmax(0, 1fr); }
+}
+
+</style>
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M5 21a11 11 0 0 1 22 0z" fill="#ffb938"/>
+        <rect x="3" y="21" width="26" height="4" rx="2" fill="#e0991f"/>
+        <rect x="14" y="8" width="4" height="13" rx="1" fill="#ffd47a"/>
+        <circle cx="16" cy="9" r="3.4" fill="#fff6d8" stroke="#6b5a49" stroke-width="1.2"/>
+      </svg>
+      <span class="wordmark">MOLLION</span>
+      <span class="tagline">one in a mollion</span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="btn-journal" type="button" aria-label="Field journal">
+        <svg viewBox="0 0 24 24"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z"/><path d="M6 3v18M10 8h5M10 12h5"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-sound" type="button" aria-label="Sound" aria-pressed="true">
+        <svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path id="snd-waves" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-help" type="button" aria-label="How to play">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.7 2.4c-.8.4-1.2 1-1.2 1.8M12 17h.01"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="stage" id="stage" aria-label="Dig site">
+      <canvas id="cv" aria-hidden="true"></canvas>
+      <div class="hud">
+        <div class="hud-depth">
+          <span class="k">Depth</span>
+          <span class="hud-line"><span class="hud-num" id="depth-num">0</span><span class="hud-unit">m</span></span>
+        </div>
+        <div class="hud-right">
+          <span class="hud-stratum" id="stratum-name">Topsoil</span>
+          <span class="k" id="stratum-idx">Stratum 1 of 15</span>
+          <span class="hud-best" id="best">Best 0 m</span>
+        </div>
+      </div>
+      <div class="banner" id="banner" aria-hidden="true">
+        <span class="b-k">ENTERING</span>
+        <span class="b-n" id="b-n">Clay</span>
+        <span class="b-d" id="b-d">100 m</span>
+      </div>
+    </section>
+
+    <section class="log" aria-label="Field log">
+      <div class="log-inner">
+        <div class="shift">
+          <div class="shift-l"><span class="k">Shift</span><span class="v" id="shift-no">1</span></div>
+          <div class="pips" id="pips" role="img" aria-label="Shift progress"></div>
+          <div class="streak" id="streak" hidden><span class="k">Vein streak</span><span class="v" id="streak-v">x1</span></div>
+        </div>
+
+        <div class="card" id="card-prompt">
+          <div class="card-head"><span class="chip" id="p-group">Geography</span><span class="k" id="p-count">Prompt 1</span></div>
+          <h1 class="prompt-text" id="p-text">Name a <strong>country</strong></h1>
+          <p class="prompt-sub" id="p-sub"></p>
+          <form id="form" autocomplete="off" novalidate>
+            <label class="sr-only" for="answer">Your answer</label>
+            <div class="input-row">
+              <input id="answer" name="answer" type="text" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="60" placeholder="dig for an answer" />
+              <button class="btn" id="btn-dig" type="submit">Dig</button>
+            </div>
+            <div class="msg" id="msg" role="status" aria-live="polite"></div>
+            <div class="aux">
+              <button class="link" id="btn-lantern" type="button">Light the lantern (-20% depth)</button>
+              <button class="link" id="btn-skip" type="button">Skip prompt</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card result" id="card-result" hidden>
+          <div id="heart-banner" class="heart-banner" hidden>One in a mollion</div>
+          <div class="res-top">
+            <div id="res-gem"></div>
+            <div>
+              <p class="res-find" id="res-find">Gold</p>
+              <h2 class="res-answer" id="res-answer">Cheddar</h2>
+              <p class="res-note" id="res-note" hidden></p>
+            </div>
+          </div>
+          <p class="res-rank" id="res-rank"></p>
+          <div id="res-bar"></div>
+          <div class="res-gain"><span class="res-m" id="res-m">+0 m</span><span class="res-mods" id="res-mods"></span></div>
+          <dl class="res-others" id="res-others"></dl>
+          <div class="res-actions"><button class="btn" id="btn-next" type="button">Next prompt</button></div>
+          <div class="sr-only" id="res-live" role="status" aria-live="polite"></div>
+        </div>
+
+        <section class="ledger" aria-label="Shift log">
+          <div class="ledger-head"><span class="k">Shift log</span><span class="k" id="ledger-sum"></span></div>
+          <ol id="ledger"></ol>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <!-- intro -->
+  <div class="modal" id="m-intro" role="dialog" aria-modal="true" aria-labelledby="intro-title" hidden>
+    <div class="modal-card intro">
+      <h2 class="big" id="intro-title">MOLLION</h2>
+      <p class="sub">one in a mollion. dig deeper than the obvious.</p>
+      <ul>
+        <li>Every prompt hides dozens or hundreds of valid answers.</li>
+        <li>Obvious answers barely scratch the dirt. Rare ones drill deep.</li>
+        <li>No daily limit and no lives. The prompts never run out, so keep digging.</li>
+      </ul>
+      <div class="row">
+        <button class="btn" id="intro-go" type="button" data-autofocus>Start digging</button>
+        <button class="btn ghost" id="intro-new" type="button" hidden>New dig</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- help -->
+  <div class="modal" id="m-help" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
+    <div class="modal-card">
+      <h2 id="help-title">How to dig</h2>
+      <ul>
+        <li>Answer each prompt with something that fits. One answer per prompt, and it is final.</li>
+        <li>Your answer is scored against everything that fits. The rarer it is, the deeper you go.</li>
+        <li>Finds run from Pebble up to Diamond. The deepest vein of each prompt is a Heartstone worth a bonus.</li>
+        <li>Gold or better builds a vein streak, adding 10% per link (up to 50%).</li>
+        <li>The lantern shows the first letter and length of one rare answer, at a 20% depth cost.</li>
+        <li>Every 7 answers ends a shift. Then you can keep going as long as you like.</li>
+        <li>Not sure how it was spelled? You will be asked before anything is locked in.</li>
+      </ul>
+      <div class="row"><button class="btn" type="button" data-close data-autofocus>Back to the dig</button></div>
+    </div>
+  </div>
+
+  <!-- shift report -->
+  <div class="modal" id="m-shift" role="dialog" aria-modal="true" aria-labelledby="shift-title" hidden>
+    <div class="modal-card">
+      <h2 id="shift-title">Shift 1 complete</h2>
+      <div class="finds-row" id="shift-finds"></div>
+      <div class="stats" id="shift-stats"></div>
+      <textarea class="share-box" id="share-text" rows="4" readonly aria-label="Shareable summary"></textarea>
+      <div class="row">
+        <button class="btn" id="shift-go" type="button" data-autofocus>Keep digging</button>
+        <button class="btn ghost" id="shift-copy" type="button">Copy result</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- journal -->
+  <div class="modal" id="m-journal" role="dialog" aria-modal="true" aria-labelledby="journal-title" hidden>
+    <div class="modal-card">
+      <h2 id="journal-title">Field journal</h2>
+      <div class="stats" id="journal-stats"></div>
+      <p class="k" style="margin:0 0 8px">Rarest finds</p>
+      <ul class="rare-list" id="rare-list"></ul>
+      <div class="row">
+        <button class="btn" type="button" data-close data-autofocus>Close</button>
+        <button class="btn ghost" id="journal-new" type="button">Back to the surface</button>
+        <button class="btn ghost" id="journal-reset" type="button">Erase journal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+'use strict';
+/* Answer sets: each list runs from most obvious to most obscure.
+   Item syntax: Display/alias/alias  ·  separator: comma  ·  person lists use surname as display. */
+const DATA = [];
+function C(id, g, q, n, items, o) { DATA.push(Object.assign({ id: id, g: g, q: q, n: n, items: items }, o || {})); }
+
+/* ───────────── GEOGRAPHY ───────────── */
+
+C('country', 'Geography', 'Name a country', 'country', `
+United States/USA/US/America/United States of America, Canada, Mexico, Brazil, France, Germany, Italy, Spain,
+United Kingdom/UK/Britain/Great Britain, China, Japan, India, Australia, Russia, Egypt, Argentina, South Africa,
+Sweden, Norway, Netherlands/Holland, Greece, Turkey/Türkiye, Ireland, Portugal, South Korea/Korea, Switzerland,
+Thailand, Cuba, Jamaica, New Zealand, Poland, Vietnam, Israel, Saudi Arabia, Iran, Iraq, Afghanistan, North Korea,
+Nigeria, Kenya, Ethiopia, Morocco, Peru, Chile, Colombia, Venezuela, Denmark, Finland, Iceland, Belgium, Austria,
+Ukraine, Indonesia, Philippines, Pakistan, Bangladesh, Singapore, Malaysia, England, Scotland, Wales, Hungary,
+Czechia/Czech Republic, Romania, Ghana, Tanzania, Cambodia, Nepal, Haiti, Panama, Costa Rica, Ecuador, Bolivia,
+Uruguay, Paraguay, Croatia, Serbia, Lebanon, Syria, Jordan, United Arab Emirates/UAE, Qatar, Algeria, Tunisia,
+Libya, Sudan, Somalia, Uganda, Zimbabwe, Zambia, Mozambique, Madagascar, Senegal, Mali, Congo/Republic of the Congo,
+Democratic Republic of the Congo/DR Congo/DRC, Angola, Namibia, Botswana, Cameroon, Ivory Coast/Côte d'Ivoire,
+Sri Lanka, Myanmar/Burma, Laos, Mongolia, Kazakhstan, Uzbekistan, Taiwan, Honduras, Guatemala, Nicaragua,
+El Salvador, Belize, Bahamas, Dominican Republic, Trinidad and Tobago/Trinidad, Barbados, Slovakia, Slovenia,
+Bulgaria, Albania, Bosnia and Herzegovina/Bosnia, Montenegro, North Macedonia/Macedonia, Kosovo, Estonia, Latvia,
+Lithuania, Belarus, Moldova, Georgia, Armenia, Azerbaijan, Cyprus, Malta, Luxembourg, Monaco, Andorra, San Marino,
+Vatican City/Vatican/Holy See, Liechtenstein, Oman, Yemen, Kuwait, Bahrain, Palestine/State of Palestine,
+Turkmenistan, Tajikistan, Kyrgyzstan, Bhutan, Maldives, Brunei, Timor-Leste/East Timor, Papua New Guinea, Fiji,
+Samoa, Tonga, Vanuatu, Solomon Islands, Rwanda, Burundi, Malawi, Lesotho, Eswatini/Swaziland, Gabon,
+Equatorial Guinea, Chad, Niger, Burkina Faso, Benin, Togo, Liberia, Sierra Leone, Guinea, Guinea-Bissau, Gambia,
+Mauritania, Mauritius, Seychelles, Comoros, Cape Verde/Cabo Verde, Djibouti, Eritrea, South Sudan,
+Central African Republic, Guyana, Suriname, Saint Lucia, Grenada, Dominica, Antigua and Barbuda,
+Saint Kitts and Nevis, Kiribati, Micronesia, Palau, Marshall Islands, Tuvalu, Nauru, Sao Tome and Principe,
+Saint Vincent and the Grenadines
+`);
+
+C('capital', 'Geography', 'Name a national capital city', 'capital city', `
+Paris, London, Rome, Tokyo, Washington DC/Washington/Washington D.C., Berlin, Madrid, Beijing/Peking, Moscow, Ottawa,
+Canberra, Cairo, Athens, Vienna, Lisbon, Dublin, Amsterdam, Brussels, Stockholm, Oslo, Copenhagen, Helsinki, Warsaw,
+Prague, Budapest, Bucharest, Sofia, Belgrade, Zagreb, Kyiv/Kiev, Minsk, Seoul, Bangkok, Hanoi, Jakarta, Manila,
+New Delhi/Delhi, Islamabad, Kabul, Tehran, Baghdad, Riyadh, Ankara, Jerusalem, Beirut, Amman, Damascus, Nairobi,
+Addis Ababa, Pretoria, Abuja, Accra, Dakar, Rabat, Tunis, Algiers, Tripoli, Khartoum, Kampala, Dodoma, Kinshasa,
+Luanda, Lusaka, Harare, Maputo, Antananarivo, Windhoek, Gaborone, Mexico City, Havana, Kingston, Panama City,
+San José/San Jose, Bogotá/Bogota, Lima, Quito, Santiago, Buenos Aires, Brasília/Brasilia, Montevideo,
+Asunción/Asuncion, La Paz, Caracas, Reykjavik, Wellington, Singapore, Kuala Lumpur, Dhaka, Kathmandu, Colombo,
+Ulaanbaatar/Ulan Bator, Tashkent, Astana, Baku, Tbilisi, Yerevan, Vilnius, Riga, Tallinn, Bratislava, Ljubljana,
+Valletta, Nicosia, Luxembourg, Monaco, Vaduz, Andorra la Vella, San Marino, Vatican City, Sarajevo, Skopje, Tirana,
+Podgorica, Pristina, Chisinau, Bern/Berne, Doha, Abu Dhabi, Muscat, Kuwait City, Manama, Sanaa/Sana'a, Phnom Penh,
+Vientiane, Naypyidaw, Thimphu, Male/Malé, Bandar Seri Begawan, Dili, Port Moresby, Suva, Apia, Nuku'alofa,
+Port Vila, Honiara, Ouagadougou, Bamako, Niamey, N'Djamena, Bangui, Libreville, Malabo, Brazzaville, Yaoundé/Yaounde,
+Lomé/Lome, Porto-Novo, Freetown, Monrovia, Conakry, Bissau, Banjul, Nouakchott, Praia, Port Louis, Victoria, Moroni,
+Djibouti, Asmara, Juba, Mogadishu, Kigali, Bujumbura, Lilongwe, Maseru, Mbabane, São Tomé/Sao Tome, Georgetown,
+Paramaribo, Port of Spain, Bridgetown, Nassau, Kingstown, Castries, St. George's, Roseau, St. John's, Basseterre,
+Port-au-Prince, Santo Domingo, Tegucigalpa, Guatemala City, Managua, San Salvador, Belmopan, Ashgabat, Dushanbe,
+Bishkek, Tarawa/South Tarawa, Palikir, Ngerulmud, Majuro, Funafuti, Yaren
+`);
+
+C('us_state', 'Geography', 'Name a US state', 'US state', `
+California, Texas, New York, Florida, Hawaii, Alaska, Nevada, Arizona, Colorado, Washington, Oregon, Illinois,
+Georgia, Virginia, Massachusetts, Pennsylvania, Ohio, Michigan, New Jersey, Louisiana, Tennessee, Utah, New Mexico,
+Montana, Wyoming, Idaho, Kentucky, North Carolina, South Carolina, Maine, Vermont, New Hampshire, Connecticut,
+Rhode Island, Delaware, Maryland, Indiana, Wisconsin, Minnesota, Iowa, Missouri, Kansas, Nebraska, Oklahoma,
+Arkansas, Mississippi, Alabama, West Virginia, North Dakota, South Dakota
+`);
+
+C('city', 'Geography', 'Name a major city that is not a national capital', 'city', `
+New York/New York City/NYC, Los Angeles/LA, Chicago, Sydney, Dubai, Hong Kong, Shanghai, Mumbai/Bombay, Istanbul,
+Barcelona, Venice, Florence, Milan, Rio de Janeiro/Rio, São Paulo/Sao Paulo, Toronto, Vancouver, Montreal,
+San Francisco, Las Vegas, Miami, Boston, Seattle, Houston, Dallas, Atlanta, New Orleans, Manchester, Liverpool,
+Edinburgh, Glasgow, Birmingham, Munich, Hamburg, Frankfurt, Zurich, Geneva, Marseille, Lyon, Nice, Naples, Kyoto,
+Osaka, Marrakesh/Marrakech, Casablanca, Lagos, Johannesburg, Cape Town, Melbourne, Auckland, Kolkata/Calcutta,
+Bangalore/Bengaluru, Karachi, Lahore, Guangzhou/Canton, Shenzhen, Chengdu, Busan, Cancún/Cancun, Guadalajara,
+Medellín/Medellin, Cartagena, Valparaíso/Valparaiso, Mendoza, Thessaloniki, Salzburg, Bruges, Antwerp, Rotterdam,
+Gothenburg, Bergen, Aarhus, Kraków/Krakow, Gdańsk/Gdansk, Porto, Seville, Granada, Bilbao, Valencia, Dubrovnik,
+Split, Plovdiv, Lviv, Odesa/Odessa, Kazan, Vladivostok, Novosibirsk, Yekaterinburg, Samarkand, Bukhara, Isfahan,
+Shiraz, Kashgar, Lhasa, Chiang Mai, Luang Prabang, Hoi An, Da Nang, Ho Chi Minh City/Saigon, Siem Reap, Mandalay,
+Varanasi/Benares, Jaipur, Udaipur, Agra, Hyderabad, Chennai/Madras, Timbuktu, Fez/Fes, Aswan, Luxor, Ushuaia,
+Cusco/Cuzco, Arequipa, Iquitos, Punta Arenas, Tromsø/Tromso, Anchorage, Honolulu, Yellowknife, Longyearbyen,
+Tórshavn/Torshavn
+`);
+
+C('mountain', 'Geography', 'Name a mountain or volcano', 'mountain', `
+Mount Everest/Everest, K2, Kilimanjaro, Mont Blanc, Matterhorn, Denali/Mount McKinley/McKinley, Mount Fuji/Fuji,
+Mount Olympus/Olympus, Mount Rushmore, Mount St. Helens, Vesuvius, Etna, Mount Sinai/Sinai, Ararat,
+Table Mountain, Aconcagua, Mount Whitney/Whitney, Mount Rainier/Rainier, Pikes Peak, Elbrus, Eiger, Jungfrau,
+Monte Rosa, Annapurna, Kangchenjunga, Lhotse, Makalu, Cho Oyu, Nanga Parbat, Dhaulagiri, Manaslu, Mount Kenya,
+Aoraki/Mount Cook, Ben Nevis, Snowdon, Scafell Pike, Mount Kosciuszko/Kosciuszko, Vinson Massif/Vinson,
+Puncak Jaya/Carstensz Pyramid, Mount Erebus/Erebus, Mauna Kea, Mauna Loa, Haleakalā/Haleakala, Cotopaxi,
+Chimborazo, Huascarán/Huascaran, Illimani, Ojos del Salado, Fitz Roy, Cerro Torre, Mount Kinabalu/Kinabalu,
+Krakatoa, Mount Pinatubo/Pinatubo, Tambora, Popocatépetl/Popocatepetl, Iztaccíhuatl/Iztaccihuatl, Mount Logan,
+Mount Robson, Mount Elbert, Grand Teton/Teton, Half Dome, Mount Katahdin/Katahdin, Mount Washington,
+Mount Mitchell, Gasherbrum, Broad Peak, Shishapangma, Ama Dablam, Machapuchare/Fishtail, Pumori, Rakaposhi,
+Mount Meru, Mount Kailash/Kailash, Ras Dashen, Toubkal, Mount Cameroon, Nyiragongo, Ol Doinyo Lengai,
+Mount Ruapehu/Ruapehu, Mount Taranaki/Taranaki, Mount Tai, Huashan, Piton de la Fournaise, Mount Agung/Agung,
+Mount Nemrut/Nemrut, Cerro Rico, Sajama
+`, { strip: ['mount', 'mountain', 'mountains'] });
+
+C('river', 'Geography', 'Name a river', 'river', `
+Nile, Amazon, Mississippi, Thames, Danube, Rhine, Seine, Yangtze, Ganges, Colorado, Hudson, Missouri, Rio Grande,
+Volga, Congo, Mekong, Tigris, Euphrates, Jordan, Yellow River/Huang He, Indus, Niger, Zambezi, Ohio, Columbia,
+Yukon, Mackenzie, St. Lawrence/Saint Lawrence, Potomac, Delaware, Tiber, Arno, Po, Rhône/Rhone, Loire, Garonne,
+Elbe, Oder, Vistula, Dnieper, Don, Ural, Ob, Yenisei, Lena, Amur, Brahmaputra, Irrawaddy, Salween, Chao Phraya,
+Orinoco, Paraná/Parana, Uruguay, Murray, Darling, Waikato, Shannon, Liffey, Severn, Tyne, Clyde, Mersey, Avon,
+Tagus, Ebro, Douro, Guadalquivir, Neva, Vltava, Sava, Drava, Tisza, Maritsa, Dniester, Neman, Daugava, Moselle,
+Meuse, Main, Neckar, Inn, Aare, Ticino, Adige, Piave, Limpopo, Orange, Okavango, Kasai, Senegal, Volta,
+Blue Nile, Magdalena, Madeira, Tocantins, Xingu, Rio Negro, São Francisco/Sao Francisco, Snake, Platte,
+Arkansas, Red River, Susquehanna, Connecticut, Sacramento, Kolyma, Indigirka, Syr Darya, Amu Darya, Tarim,
+Irtysh, Angara, Pechora, Kama, Oka, Ishim, Zeya
+`, { strip: ['river'] });
+
+C('lake_sea', 'Geography', 'Name a lake or sea', 'lake or sea', `
+Lake Superior, Lake Michigan, Lake Huron, Lake Erie, Lake Ontario, Lake Victoria, Lake Baikal, Lake Titicaca,
+Lake Tahoe, Lake Geneva, Lake Como, Lake Garda, Lake Lucerne, Lake Constance/Bodensee, Loch Ness, Loch Lomond,
+Windermere, Caspian Sea, Dead Sea, Black Sea, Red Sea, Mediterranean Sea, Baltic Sea, North Sea, Caribbean Sea,
+Arabian Sea, Aral Sea, Sea of Galilee, Adriatic Sea, Aegean Sea, Ionian Sea, Tyrrhenian Sea, Coral Sea,
+Tasman Sea, Bering Sea, Sargasso Sea, Barents Sea, Weddell Sea, Ross Sea, Sea of Japan, South China Sea,
+Yellow Sea, Philippine Sea, Java Sea, Celebes Sea, Timor Sea, Arafura Sea, Beaufort Sea, Labrador Sea, Kara Sea,
+Laptev Sea, White Sea, Sea of Azov, Sea of Marmara, Great Salt Lake, Lake Okeechobee, Lake Winnipeg,
+Great Bear Lake, Great Slave Lake, Lake Athabasca, Lake Chad, Lake Tanganyika, Lake Malawi, Lake Turkana,
+Lake Kivu, Lake Nasser, Lake Kariba, Lake Albert, Lake Tana, Lake Van, Lake Sevan, Lake Urmia, Lake Balkhash,
+Issyk-Kul, Lake Ladoga, Lake Onega, Lake Peipus, Vänern, Vättern, Lake Saimaa, Lake Inari, Lake Bled,
+Lake Ohrid, Lake Prespa, Lake Skadar, Lake Balaton, Lake Neusiedl, Lake Annecy, Lake Maggiore, Lake Lugano,
+Lake Neuchâtel, Lake Zurich, Lough Neagh, Lough Erne, Lake Taupo, Lake Wakatipu, Lake Eyre, Lake Champlain,
+Lake Placid, Crater Lake, Lake Pontchartrain, Lake Maracaibo, Lake Nicaragua, Lake Atitlán, Lake Chapala,
+Lake Poopó, Lake Vostok, Lake Natron, Lake Hillier, Lake Retba
+`, { strip: ['lake', 'sea', 'loch', 'lough', 'of'] });
+
+C('island', 'Geography', 'Name an island', 'island', `
+Hawaii, Greenland, Madagascar, Iceland, Cuba, Jamaica, Ireland, Great Britain, Sicily, Sardinia, Crete, Cyprus,
+Malta, Bali, Java, Borneo, Sumatra, Tasmania, Fiji, Tahiti, Bora Bora, Zanzibar, Mauritius, Santorini, Mykonos,
+Corsica, Mallorca/Majorca, Ibiza, Tenerife, Capri, Manhattan, Long Island, Staten Island, Newfoundland,
+Baffin Island, Vancouver Island, Prince Edward Island, Easter Island/Rapa Nui, Pitcairn Island/Pitcairn,
+Tristan da Cunha, Saint Helena, Ascension Island/Ascension, Falkland Islands/Falklands, South Georgia,
+Isle of Skye/Skye, Isle of Man, Isle of Wight, Anglesey, Lundy, Iona, Staffa, Okinawa, Hokkaido, Honshu, Kyushu,
+Shikoku, Hainan, Sakhalin, Hispaniola, Puerto Rico, Trinidad, Barbados, Aruba, Curaçao/Curacao, Bonaire,
+Martinique, Guadeloupe, Madeira, Gotland, Öland/Oland, Bornholm, Zealand, Funen, Rügen/Rugen, Heligoland, Sylt,
+Texel, Corfu, Rhodes, Kos, Lesbos, Naxos, Paros, Milos, Hydra, Skiathos, Elba, Stromboli, Lampedusa,
+Pantelleria, Procida, Murano, Burano, Lido, Gozo, Réunion/Reunion, Mayotte, Socotra, Pemba, Lamu,
+Robben Island, Ellis Island, Alcatraz, Surtsey, Sark, Alderney, Herm, Jethou, Tiree, Eigg, Rum, Muck, Canna,
+Foula, Fair Isle, Unst, Mingulay, Saint Kilda/St Kilda
+`, { strip: ['island', 'islands', 'isle', 'of', 'the'] });
+
+C('desert', 'Geography', 'Name a desert', 'desert', `
+Sahara, Gobi, Mojave, Kalahari, Atacama, Arabian Desert/Arabian, Sonoran, Namib, Thar, Negev, Antarctic Desert/Antarctica,
+Great Victoria Desert, Gibson Desert, Simpson Desert, Taklamakan, Karakum, Kyzylkum, Patagonian Desert/Patagonia,
+Great Basin, Chihuahuan, Syrian Desert, Danakil, Ténéré/Tenere, Libyan Desert, Nubian Desert, Rub' al Khali/Empty Quarter,
+Dasht-e Kavir, Dasht-e Lut, Ordos, Badain Jaran, Sechura, Colorado Desert, Painted Desert, Black Rock Desert,
+Tabernas, Bardenas Reales, Great Sandy Desert, Tanami, Sturt Stony Desert, Sinai Desert,
+Judaean Desert/Judean Desert, Wahiba Sands, Western Desert, Eastern Desert, Chalbi, Karoo, Skeleton Coast,
+Bolson de Mapimi, Monte Desert, Vizcaino
+`, { strip: ['desert'] });
+
+/* ───────────── NATURE ───────────── */
+
+C('mammal', 'Nature', 'Name a mammal', 'mammal', `
+Dog, Cat, Elephant, Lion, Tiger, Bear, Horse, Cow, Monkey, Giraffe, Zebra, Wolf, Fox, Rabbit, Deer, Pig, Sheep, Goat,
+Dolphin, Whale, Kangaroo, Koala, Panda, Gorilla, Chimpanzee, Hippopotamus/Hippo, Rhinoceros/Rhino, Leopard, Cheetah,
+Camel, Squirrel, Mouse, Rat, Bat, Hedgehog, Otter, Seal, Walrus, Polar Bear, Moose, Bison, Buffalo, Raccoon, Skunk,
+Badger, Beaver, Platypus, Armadillo, Sloth, Anteater, Lemur, Orangutan, Baboon, Meerkat, Hyena, Jaguar,
+Puma/Cougar/Mountain Lion, Lynx, Bobcat, Ferret, Weasel, Mink, Llama, Alpaca, Donkey, Mule, Antelope, Gazelle,
+Wildebeest/Gnu, Impala, Springbok, Kudu, Elk, Reindeer/Caribou, Wild Boar/Boar, Warthog, Capybara, Chinchilla,
+Guinea Pig, Hamster, Gerbil, Porcupine, Groundhog/Woodchuck, Chipmunk, Prairie Dog, Mole, Shrew, Vole, Lemming,
+Muskrat, Opossum, Wombat, Tasmanian Devil, Wallaby, Possum, Dingo, Coyote, Jackal, Red Panda, Sun Bear, Manatee,
+Dugong, Narwhal, Beluga, Orca/Killer Whale, Sperm Whale, Blue Whale, Humpback Whale, Sea Lion, Pangolin, Aardvark,
+Tapir, Okapi, Gibbon, Mandrill, Macaque, Tarsier, Marmoset, Capuchin, Howler Monkey, Spider Monkey,
+Proboscis Monkey, Snow Leopard, Clouded Leopard, Serval, Caracal, Ocelot, Fossa, Binturong, Civet, Genet,
+Mongoose, Aardwolf, Wolverine, Marten, Stoat, Polecat, Quokka, Numbat, Bilby, Bandicoot, Quoll, Echidna,
+Kinkajou, Coati, Agouti, Paca, Mara, Hyrax, Elephant Shrew/Sengi, Tenrec, Solenodon, Aye-aye, Saola,
+Babirusa, Pudu, Muntjac, Chevrotain, Dik-dik, Bongo, Sitatunga, Takin, Markhor, Saiga, Pronghorn, Hartebeest,
+Gerenuk, Desman, Aardwolf, Tuco-tuco, Colugo, Springhare, Yapok
+`);
+
+C('bird', 'Nature', 'Name a bird', 'bird', `
+Eagle, Owl, Penguin, Parrot, Robin, Sparrow, Crow, Duck, Goose, Swan, Chicken, Turkey, Pigeon, Dove, Hawk, Falcon,
+Flamingo, Peacock, Ostrich, Hummingbird, Woodpecker, Seagull/Gull, Pelican, Toucan, Cardinal, Blue Jay/Jay,
+Bluebird, Canary, Finch, Cockatoo, Macaw, Budgerigar/Budgie, Kiwi, Emu, Cassowary, Albatross, Puffin, Heron,
+Crane, Stork, Ibis, Kingfisher, Starling, Swallow, Swift, Wren, Magpie, Raven, Rook, Jackdaw, Vulture, Condor,
+Osprey, Kestrel, Harrier, Buzzard, Kite, Cormorant, Gannet, Booby, Tern, Plover, Sandpiper, Curlew, Lapwing,
+Oystercatcher, Avocet, Snipe, Quail, Pheasant, Partridge, Grouse, Ptarmigan, Lark/Skylark, Nightingale, Thrush,
+Blackbird, Mockingbird, Oriole, Warbler, Tanager, Grosbeak, Bunting, Nuthatch, Chickadee, Tit, Cuckoo,
+Roadrunner, Nightjar, Whippoorwill, Hoopoe, Hornbill, Bee-eater, Roller, Trogon, Quetzal, Motmot, Jacamar,
+Barbet, Honeyguide, Lyrebird, Bowerbird, Bird of Paradise, Kookaburra, Rhea, Tinamou, Kakapo, Kea, Takahe, Kagu,
+Shoebill, Hoatzin, Secretarybird, Potoo, Oilbird, Frogmouth, Sunbittern, Screamer, Jacana, Limpkin, Bustard,
+Seriema, Hamerkop, Spoonbill, Frigatebird, Tropicbird, Skua, Petrel, Shearwater, Fulmar, Auk, Guillemot,
+Razorbill, Dipper, Shrike, Drongo, Pipit, Wagtail, Dunnock, Bulbul, Babbler, Sunbird, Weaver, Whydah, Waxbill,
+Manakin, Cotinga, Antbird, Ovenbird, Tapaculo, Gnatcatcher, Vireo, Fairywren, Mousebird, Turaco, Courser,
+Pratincole, Thick-knee, Sheathbill
+`);
+
+C('fish', 'Nature', 'Name a fish', 'fish', `
+Salmon, Tuna, Shark, Goldfish, Clownfish, Trout, Cod, Bass, Catfish, Swordfish, Marlin, Eel, Piranha, Pufferfish,
+Seahorse, Angelfish, Betta, Guppy, Tetra, Barracuda, Mackerel, Sardine, Anchovy, Herring, Haddock, Halibut,
+Flounder, Sole, Snapper, Grouper, Mahi-mahi/Dolphinfish, Perch, Pike, Carp, Koi, Tilapia, Sturgeon, Stingray,
+Manta Ray, Hammerhead, Great White, Whale Shark, Lionfish, Moray Eel, Oarfish, Anglerfish, Sunfish/Mola,
+Wrasse, Parrotfish, Triggerfish, Surgeonfish, Damselfish, Blenny, Goby, Remora, Gar, Bowfin, Arapaima,
+Coelacanth, Lamprey, Hagfish, Lungfish, Sculpin, Lumpfish, Fangtooth, Viperfish, Barreleye, Dragonfish,
+Gulper Eel, Hatchetfish, Flying Fish, Needlefish, Archerfish, Mudskipper, Stonefish, Scorpionfish, Monkfish,
+John Dory/Dory, Wolffish, Pollock, Hake, Turbot, Skate, Dogfish, Tench, Roach, Rudd, Bream, Chub, Dace,
+Gudgeon, Minnow, Loach, Zander, Burbot, Grayling, Char, Whitefish, Smelt, Shad, Menhaden, Pilchard, Sprat,
+Bonito, Wahoo, Sailfish, Tarpon, Bonefish, Pompano, Amberjack, Mako, Thresher, Bull Shark, Tiger Shark,
+Nurse Shark, Basking Shark, Megamouth, Goblin Shark, Greenland Shark, Cookiecutter Shark, Wobbegong,
+Angelshark, Lemon Shark, Dragonet, Opah, Louvar, Ribbonfish, Snipe Eel, Pearlfish, Pricklefish
+`);
+
+C('sea_creature', 'Nature', 'Name a sea creature that is not a fish', 'sea creature', `
+Dolphin, Whale, Octopus, Jellyfish, Starfish/Sea Star, Crab, Lobster, Shrimp, Turtle/Sea Turtle, Seal, Sea Lion,
+Walrus, Squid, Clam, Oyster, Mussel, Scallop, Coral, Sea Urchin, Sea Cucumber, Sea Anemone/Anemone, Manatee,
+Orca, Narwhal, Barnacle, Krill, Plankton, Nautilus, Cuttlefish, Nudibranch/Sea Slug, Sea Otter, Hermit Crab,
+Spider Crab, Horseshoe Crab, Sea Snake, Dugong, Sponge, Crayfish, Prawn, Conch, Whelk, Limpet, Abalone, Cowrie,
+Cone Snail, Mantis Shrimp, Pistol Shrimp, Siphonophore, Comb Jelly/Ctenophore, Salp, Sea Pen, Sea Squirt/Tunicate,
+Brittle Star, Feather Star, Sea Lily, Chiton, Sea Hare, Sea Butterfly/Pteropod, Vampire Squid, Giant Squid,
+Colossal Squid, Dumbo Octopus, Blanket Octopus, Argonaut, Giant Isopod/Isopod, Tube Worm, Bobbit Worm, Pyrosome,
+Xenophyophore, Lion's Mane Jellyfish, Box Jellyfish, Portuguese Man o' War/Man o' War, Sea Gooseberry, Sand Dollar,
+Sea Fan, Sea Whip, Zoanthid, Hydroid, Bryozoan, Lamp Shell/Brachiopod, Arrow Worm, Peanut Worm, Acorn Worm, Placozoan
+`);
+
+C('bug', 'Nature', 'Name an insect or creepy-crawly', 'insect', `
+Ant, Bee, Butterfly, Fly, Mosquito, Spider, Ladybug/Ladybird, Beetle, Wasp, Cockroach, Grasshopper, Cricket,
+Caterpillar, Dragonfly, Moth, Firefly/Lightning Bug, Praying Mantis/Mantis, Termite, Flea, Tick, Mite, Scorpion,
+Centipede, Millipede, Earwig, Aphid, Cicada, Locust, Stick Insect/Walking Stick, Hornet, Bumblebee, Honeybee,
+Fruit Fly, Housefly, Gnat, Midge, Horsefly, Crane Fly/Daddy Longlegs, Lacewing, Antlion, Mayfly, Stonefly,
+Caddisfly, Damselfly, Silverfish, Bedbug, Louse/Lice, Weevil, Stag Beetle, Dung Beetle, Rhinoceros Beetle,
+Hercules Beetle, Goliath Beetle, Click Beetle, Scarab, Jewel Beetle, Longhorn Beetle, Leaf Beetle, Ground Beetle,
+Tiger Beetle, Blister Beetle, Rove Beetle, Water Strider, Water Boatman, Backswimmer, Assassin Bug, Stink Bug,
+Shield Bug, Leafhopper, Treehopper, Planthopper, Spittlebug, Thrips, Katydid, Mole Cricket, Cave Cricket, Weta,
+Webspinner, Snakefly, Dobsonfly, Alderfly, Scorpionfly, Sawfly, Mud Dauber, Velvet Ant, Bristletail, Springtail,
+Proturan, Dipluran, Zorapteran, Tarantula, Black Widow, Wolf Spider, Jumping Spider, Harvestman, Pill Bug/Woodlouse,
+Whip Scorpion, Solifugid/Camel Spider, Pseudoscorpion
+`);
+
+C('reptile', 'Nature', 'Name a reptile or amphibian', 'reptile or amphibian', `
+Snake, Lizard, Turtle, Crocodile, Alligator, Frog, Toad, Salamander, Newt, Gecko, Iguana, Chameleon,
+Komodo Dragon, Cobra, Python, Boa, Rattlesnake, Viper, Anaconda, Tortoise, Skink, Monitor Lizard, Gila Monster,
+Bearded Dragon, Axolotl, Tuatara, Caiman, Gharial, Mamba, Adder, Copperhead, Coral Snake, Garter Snake,
+King Cobra, Black Mamba, Boomslang, Taipan, Sea Snake, Basilisk, Anole, Sidewinder, Bushmaster, Fer-de-lance, Gaboon Viper, Puff Adder, Death Adder, Tiger Snake, Hognose Snake, Kingsnake, Milk Snake, Horned Lizard, Frilled Lizard,
+Thorny Devil, Slow Worm, Glass Lizard, Whiptail, Hellbender, Mudpuppy, Olm, Caecilian, Siren, Amphiuma,
+Fire Salamander, Tiger Salamander, Poison Dart Frog, Tree Frog, Bullfrog, Cane Toad, Spadefoot,
+Midwife Toad, Surinam Toad, Glass Frog, Goliath Frog, Pacman Frog, Leopard Gecko, Tokay Gecko, Day Gecko,
+Leaf-tailed Gecko, Jackson's Chameleon, Panther Chameleon, Matamata, Snapping Turtle, Box Turtle,
+Painted Turtle, Leatherback, Loggerhead, Hawksbill, Green Sea Turtle, Galápagos Tortoise/Galapagos Tortoise,
+Aldabra Tortoise, Pancake Tortoise, Pig-nosed Turtle, Softshell Turtle, Terrapin, Slider, `);
+
+C('dinosaur', 'Nature', 'Name a dinosaur or prehistoric reptile', 'dinosaur', `
+Tyrannosaurus Rex/T. rex/T-Rex/Tyrannosaurus/Trex, Velociraptor/Raptor, Triceratops, Stegosaurus, Brachiosaurus,
+Diplodocus, Spinosaurus, Pterodactyl/Pteranodon, Ankylosaurus, Allosaurus, Brontosaurus/Apatosaurus,
+Iguanodon, Parasaurolophus, Pachycephalosaurus, Dilophosaurus, Carnotaurus, Compsognathus, Giganotosaurus,
+Baryonyx, Deinonychus, Gallimimus, Oviraptor, Microraptor, Utahraptor, Argentinosaurus, Therizinosaurus,
+Amargasaurus, Kentrosaurus, Mamenchisaurus, Plesiosaurus/Plesiosaur, Ichthyosaurus/Ichthyosaur, Mosasaurus/Mosasaur,
+Archaeopteryx, Protoceratops, Maiasaura, Hadrosaurus, Edmontosaurus, Styracosaurus, Torosaurus, Albertosaurus,
+Gorgosaurus, Herrerasaurus, Eoraptor, Coelophysis, Ceratosaurus, Megalosaurus, Troodon, Struthiomimus,
+Ornithomimus, Corythosaurus, Lambeosaurus, Tarbosaurus, Nigersaurus, Concavenator, Yutyrannus, Sinosauropteryx,
+Sauroposeidon, Dracorex, Shuvuuia, Albertonykus, Cryolophosaurus, Majungasaurus, Suchomimus, Irritator,
+Dreadnoughtus, Patagotitan, Dimetrodon, Quetzalcoatlus, Ouranosaurus, Tsintaosaurus, Minmi, Sarcosuchus,
+Deinosuchus, Kronosaurus, Liopleurodon, Elasmosaurus, Tylosaurus, Opthalmosaurus, Zuniceratops, Xenoceratops,
+Kosmoceratops, Spicomellus, Nothronychus
+`);
+
+C('tree', 'Nature', 'Name a tree', 'tree', `
+Oak, Pine, Maple, Birch, Willow, Palm, Elm, Cedar, Spruce, Fir, Redwood, Sequoia, Cherry, Beech, Ash, Poplar,
+Aspen, Cypress, Hickory, Walnut, Chestnut, Magnolia, Dogwood, Juniper, Eucalyptus, Baobab, Banyan, Mahogany,
+Teak, Ebony, Olive, Fig, Mulberry, Linden/Lime Tree, Sycamore, Hawthorn, Holly, Yew, Larch, Hemlock, Sassafras,
+Hornbeam, Alder, Hazel, Rowan/Mountain Ash, Plane, Horse Chestnut, Buckeye, Catalpa, Tulip Tree, Ginkgo,
+Monkey Puzzle/Araucaria, Joshua Tree, Cottonwood, Locust, Mesquite, Acacia, Jacaranda, Frangipani/Plumeria,
+Flame Tree, Kapok/Ceiba, Rubber Tree, Cork Oak, Lignum Vitae, Ironwood, Osage Orange, Tamarack,
+Bristlecone Pine, Wollemi Pine, Dragon Blood Tree, Rainbow Eucalyptus, Sausage Tree, Strangler Fig,
+Quiver Tree, Kauri, Totara, Rimu, Pohutukawa, Jarrah, Karri, Blackwood, Coachwood, Tulipwood, Balsa, Sandalwood,
+Rosewood, Pecan, Persimmon, Pawpaw, Sweetgum, Black Gum, Tupelo, Bald Cypress, Dawn Redwood, Coast Redwood,
+Giant Sequoia, Douglas Fir, Sitka Spruce, Norway Spruce, Scots Pine, Stone Pine, Cedar of Lebanon, Deodar,
+Camphor, Neem, Tamarind, Jackfruit Tree, Breadfruit Tree, Moringa, Kigelia, Boab, Mopane, Marula, Argan, Carob
+`);
+
+C('flower', 'Nature', 'Name a flower', 'flower', `
+Rose, Tulip, Daisy, Sunflower, Lily, Orchid, Daffodil, Carnation, Lavender, Poppy, Violet, Marigold, Iris, Lotus,
+Hibiscus, Jasmine, Peony, Chrysanthemum, Dandelion, Pansy, Petunia, Geranium, Begonia, Zinnia, Dahlia, Lilac,
+Hydrangea, Azalea, Camellia, Magnolia, Gardenia, Foxglove, Snapdragon, Sweet Pea, Cosmos, Aster, Anemone,
+Ranunculus, Freesia, Gladiolus, Hyacinth, Crocus, Snowdrop, Bluebell, Buttercup, Primrose, Cowslip,
+Forget-me-not, Honeysuckle, Wisteria, Clematis, Bougainvillea, Morning Glory, Nasturtium, Larkspur, Delphinium,
+Lupin, Columbine, Bleeding Heart, Hollyhock, Gerbera, Protea, Bird of Paradise, Anthurium, Amaryllis,
+Alstroemeria, Edelweiss, Lisianthus, Cyclamen, Fuchsia, Heather, Gentian, Saxifrage, Pasqueflower,
+Corpse Flower, Rafflesia, Ghost Orchid, Moonflower, Kangaroo Paw, Waratah, Banksia, Passionflower, Trillium,
+Jack-in-the-pulpit, Lady's Slipper, Fritillary, Scilla, Chionodoxa, Calla Lily, Cornflower, Yarrow, Tansy,
+Feverfew, Coneflower/Echinacea, Black-eyed Susan, Lobelia, Salvia, Verbena, Phlox, Sedum, Stonecrop, Astilbe,
+Bergenia, Hellebore, Aconite, Monkshood, Lungwort, Jacob's Ladder, Blanket Flower, Bachelor's Button, Celosia,
+Statice, Stephanotis, Tuberose, Plumbago, Hoya, Clivia, Nerine, Agapanthus, Allium, Camassia, Ixia, Sparaxis
+`);
+
+C('dog_breed', 'Nature', 'Name a dog breed', 'dog breed', `
+Labrador Retriever/Labrador/Lab, Golden Retriever/Golden, German Shepherd/Alsatian, Poodle, Bulldog/English Bulldog,
+French Bulldog/Frenchie, Beagle, Chihuahua, Pug, Siberian Husky/Husky, Rottweiler, Dachshund/Wiener Dog,
+Boxer, Doberman/Doberman Pinscher, Great Dane, Yorkshire Terrier/Yorkie, Shih Tzu, Pomeranian,
+Corgi/Welsh Corgi/Pembroke Welsh Corgi, Border Collie, Collie, Cocker Spaniel, Springer Spaniel, Saint Bernard,
+Bernese Mountain Dog/Bernese, Newfoundland, Mastiff, Bullmastiff, Akita, Shiba Inu, Chow Chow, Samoyed,
+Alaskan Malamute/Malamute, Australian Shepherd/Aussie, Cavalier King Charles Spaniel/Cavalier, Maltese, Havanese,
+Bichon Frise, Papillon, Greyhound, Whippet, Italian Greyhound, Saluki, Afghan Hound, Basset Hound, Bloodhound,
+Foxhound, Coonhound, Dalmatian, Weimaraner, Vizsla, Pointer, Irish Setter, English Setter, Brittany,
+Airedale Terrier/Airedale, Jack Russell Terrier/Jack Russell, Scottish Terrier/Scottie,
+West Highland Terrier/Westie, Bull Terrier, Staffordshire Bull Terrier/Staffy, Pit Bull/American Pit Bull Terrier,
+Boston Terrier, Cairn Terrier, Fox Terrier, Rat Terrier, Schnauzer, Miniature Schnauzer, Giant Schnauzer,
+Miniature Pinscher, Belgian Malinois/Malinois, Old English Sheepdog, Shetland Sheepdog/Sheltie, Briard, Puli,
+Komondor, Kuvasz, Great Pyrenees, Anatolian Shepherd, Tibetan Mastiff, Tibetan Terrier, Lhasa Apso, Pekingese,
+Japanese Chin, Brussels Griffon, Affenpinscher, Chinese Crested, Xoloitzcuintli/Xolo, Basenji,
+Rhodesian Ridgeback, Cane Corso, Dogue de Bordeaux, Neapolitan Mastiff, Leonberger, Keeshond, Schipperke,
+Pharaoh Hound, Ibizan Hound, Borzoi, Irish Wolfhound, Scottish Deerhound, Otterhound, Sloughi, Azawakh,
+Lagotto Romagnolo, Kooikerhondje, Norwegian Lundehund/Lundehund, Peruvian Inca Orchid, Mudi, Pumi, Tosa Inu/Tosa,
+Catahoula Leopard Dog/Catahoula, Plott Hound, Spinone Italiano/Spinone, Kerry Blue Terrier, Glen of Imaal Terrier,
+Skye Terrier, Sealyham Terrier, Dandie Dinmont Terrier, Norfolk Terrier, Norwich Terrier, Lakeland Terrier,
+Bedlington Terrier, Cesky Terrier, Entlebucher Mountain Dog/Entlebucher, Finnish Lapphund, Swedish Vallhund,
+Icelandic Sheepdog, Bergamasco, Stabyhoun, Drentsche Patrijshond, Nova Scotia Duck Tolling Retriever/Toller,
+Chinook, Mudi, Kromfohrlander
+`);
+
+C('cat_breed', 'Nature', 'Name a cat breed', 'cat breed', `
+Siamese, Persian, Maine Coon, Bengal, Ragdoll, Sphynx, British Shorthair, Scottish Fold, Abyssinian, Russian Blue,
+Birman, Burmese, Norwegian Forest Cat, Siberian, Savannah, Oriental Shorthair, Devon Rex, Cornish Rex,
+American Shorthair, Exotic Shorthair, Turkish Angora/Angora, Turkish Van, Manx, Munchkin, Himalayan, Tonkinese,
+Balinese, Ocicat, Egyptian Mau, Somali, Bombay, Havana Brown, Chartreux, Burmilla, Singapura, Korat, Japanese Bobtail,
+American Curl, LaPerm, Selkirk Rex, Toyger, Peterbald, Lykoi, Kurilian Bobtail, Khao Manee, Sokoke, Serengeti,
+Cymric, Pixiebob, American Bobtail, Nebelung, Snowshoe, Ragamuffin, Chausie, Don Sphynx, Aegean, Cyprus Aphrodite,
+Arabian Mau, Thai, Sam Sawet, Highlander, Minskin, Napoleon, Ukrainian Levkoy, Donskoy, Tiffanie, Asian Semi-longhair
+`);
+
+/* ───────────── FOOD & DRINK ───────────── */
+
+C('fruit', 'Food & Drink', 'Name a fruit', 'fruit', `
+Apple, Banana, Orange, Strawberry, Grape, Lemon, Watermelon, Pineapple, Mango, Peach, Pear, Cherry, Blueberry,
+Raspberry, Blackberry, Kiwi, Lime, Grapefruit, Coconut, Plum, Apricot, Pomegranate, Papaya, Fig, Melon,
+Cantaloupe, Honeydew, Tangerine, Mandarin, Clementine, Nectarine, Cranberry, Date, Guava, Passion Fruit,
+Lychee, Dragon Fruit/Pitaya, Persimmon, Starfruit/Carambola, Avocado, Tomato, Olive, Currant, Gooseberry,
+Elderberry, Mulberry, Boysenberry, Loganberry, Cloudberry, Lingonberry, Huckleberry, Jackfruit, Durian,
+Rambutan, Mangosteen, Longan, Kumquat, Yuzu, Pomelo, Quince, Medlar, Damson, Greengage, Sloe, Plantain,
+Breadfruit, Soursop/Graviola, Cherimoya/Custard Apple, Sapodilla, Tamarind, Ackee, Feijoa, Loquat, Jujube,
+Salak/Snake Fruit, Langsat, Santol, Jabuticaba, Acai, Camu Camu, Cupuacu, Noni, Marang, Buddha's Hand,
+Miracle Fruit, Finger Lime, Ugli Fruit, Kiwano/Horned Melon, Pepino, Tamarillo, Physalis/Cape Gooseberry/Goldenberry,
+Lucuma, Pitanga/Surinam Cherry, Mamey, Quenepa/Genip, Bael, Wood Apple, Rose Apple, Salmonberry, Chokeberry,
+Sea Buckthorn, Barberry, Serviceberry/Juneberry, Bilberry, Jostaberry, Nance, Pulasan, Sugar Apple, Imbe, Lanzones
+`);
+
+C('vegetable', 'Food & Drink', 'Name a vegetable', 'vegetable', `
+Carrot, Potato, Onion, Broccoli, Lettuce, Spinach, Cucumber, Corn/Maize, Pepper, Celery, Cabbage, Cauliflower,
+Pea, Green Bean, Asparagus, Mushroom, Garlic, Zucchini/Courgette, Squash, Pumpkin, Eggplant/Aubergine,
+Beetroot/Beet, Radish, Turnip, Sweet Potato, Yam, Leek, Kale, Brussels Sprouts, Artichoke, Okra, Parsnip,
+Rutabaga/Swede, Cassava, Shallot, Scallion/Green Onion/Spring Onion, Chard/Swiss Chard, Bok Choy, Arugula/Rocket,
+Endive, Radicchio, Fennel, Kohlrabi, Celeriac, Salsify, Jicama, Daikon, Romanesco, Cardoon, Mizuna, Tatsoi,
+Fiddlehead, Samphire, Chayote, Taro, Lotus Root, Water Chestnut, Bamboo Shoots, Bean Sprouts, Watercress,
+Collard Greens/Collards, Mustard Greens, Sorrel, Purslane, Nopales, Jerusalem Artichoke/Sunchoke, Horseradish,
+Ramps, Chicory, Lamb's Lettuce/Mache, Skirret, Oca, Ulluco, Mashua, Burdock/Gobo, Celtuce, Tomatillo, Delicata,
+Butternut Squash/Butternut, Acorn Squash, Spaghetti Squash, Kabocha, Hubbard Squash, Pak Choi, Choy Sum,
+Gai Lan/Chinese Broccoli, Napa Cabbage, Savoy Cabbage, Red Cabbage, Pointed Cabbage, Broccolini, Rapini/Broccoli Rabe,
+Cima di Rapa, Agretti, Puntarelle, Cavolo Nero, Amaranth Greens, Malabar Spinach, Water Spinach/Kangkong,
+Yardlong Bean, Winged Bean, Bitter Melon, Luffa, Winter Melon, Wax Gourd, Snake Gourd, Ivy Gourd/Tindora
+`);
+
+C('cheese', 'Food & Drink', 'Name a cheese', 'cheese', `
+Cheddar, Mozzarella, Brie, Parmesan/Parmigiano Reggiano, Swiss, Gouda, Feta, Blue Cheese, Cream Cheese, American,
+Provolone, Camembert, Gruyère/Gruyere, Edam, Monterey Jack, Pepper Jack, Colby, Ricotta, Cottage Cheese, Halloumi,
+Goat Cheese/Chèvre, Roquefort, Gorgonzola, Stilton, Emmental/Emmentaler, Havarti, Jarlsberg, Manchego, Pecorino,
+Mascarpone, Burrata, Paneer, Asiago, Fontina, Muenster, Limburger, Raclette, Comté/Comte, Cotija, Queso Fresco,
+Oaxaca, Wensleydale, Red Leicester, Double Gloucester, Caerphilly, Cheshire, Stinking Bishop, Cornish Yarg/Yarg,
+Taleggio, Cabrales, Casu Marzu, Vacherin, Reblochon, Mimolette, Appenzeller, Tête de Moine/Tete de Moine,
+Leyden, Idiazábal/Idiazabal, Époisses/Epoisses, Munster, Livarot, Pont-l'Évêque/Pont l'Eveque, Boursin,
+Saint-Nectaire/St Nectaire, Cantal, Morbier, Beaufort, Ossau-Iraty, Brillat-Savarin, Langres, Maroilles,
+Bleu d'Auvergne, Fourme d'Ambert, Danish Blue, Cambozola, Gjetost/Brunost, Queso Blanco, Quark, Skyr, Labneh,
+Kashkaval, Sirene, Tilsit, Handkäse/Handkase, Bergkäse/Bergkase, Pule, Kasseri, Graviera, Mizithra, Anthotyros,
+Teleme, Mahón/Mahon, Torta del Casar, Zamorano, Murcia al Vino, Montasio, Grana Padano, Castelmagno, Bra,
+Robiola, Stracchino, Crescenza, Scamorza, Caciocavallo, Piave, Bitto, Fiore Sardo, Ragusano, Canestrato
+`);
+
+C('pasta', 'Food & Drink', 'Name a pasta shape or type', 'pasta', `
+Spaghetti, Penne, Macaroni, Lasagna/Lasagne, Fettuccine, Ravioli, Linguine, Rigatoni, Farfalle, Fusilli, Tortellini,
+Orzo, Tagliatelle, Gnocchi, Cannelloni, Manicotti, Vermicelli, Angel Hair/Capellini, Pappardelle, Ziti, Bucatini,
+Rotini, Orecchiette, Conchiglie/Shells, Cavatappi, Gemelli, Radiatori, Campanelle, Ditalini, Anelli, Paccheri,
+Mafaldine, Casarecce, Strozzapreti, Pici, Trofie, Cencioni, Malloreddus, Fregola, Lumache, Creste di Gallo,
+Tortelloni, Agnolotti, Cappelletti, Mezzelune, Caramelle, Culurgiones, Maltagliati, Tonnarelli, Spaghettoni,
+Bigoli, Busiate, Fileja, Sagne, Scialatielli, Garganelli, Stringozzi, Ciriole, Calamarata, Mezze Maniche,
+Sedani, Tripoline, Reginette, Fiori, Quadrefiore, Pastina, Acini di Pepe, Stelline, Tubetti, Occhi di Lupo,
+Cavatelli, Gigli, Lorighittas, Corzetti, Croxetti, Testaroli, Pizzoccheri, Spätzle/Spaetzle, Trenette,
+Strangolapreti, Cjarsons, Canederli
+`);
+
+C('bread', 'Food & Drink', 'Name a type of bread', 'bread', `
+Baguette, Sourdough, Ciabatta, Naan, Pita, Focaccia, Bagel, Brioche, Rye Bread/Rye, Pumpernickel, White Bread,
+Wholemeal/Whole Wheat, Multigrain, Cornbread, Soda Bread, Challah, Lavash, Roti/Chapati, Paratha, Tortilla,
+Flatbread, Pretzel, Grissini, Croissant, English Muffin, Crumpet, Bun, Roll, Cob, Bloomer, Farl, Bannock, Stollen, Panettone,
+Pandoro, Injera, Bolillo, Arepa, Pão de Queijo/Pao de Queijo, Mantou, Bao, Puri, Bhatura, Kulcha, Sangak, Barbari,
+Taftan, Simit, Pide, Lahmacun, Khachapuri, Matzo, Bialy, Muffin, Scone, Sandwich Loaf, Tin Loaf, Split Tin,
+Barmbrack, Boxty, Potato Bread, Fougasse, Pain de Campagne, Pain au Levain, Pain de Mie, Kaiser Roll, Vollkornbrot,
+Zopf, Kümmelweck/Kummelweck, Pan de Muerto, Concha, Telera, Pan Dulce, Pan de Sal, Ensaimada, Broa, Bara Brith,
+Lardy Cake, Chelsea Bun, Hot Cross Bun, Bath Bun, Eccles Cake, Parkin, Tiger Bread, Cottage Loaf, Batch, Stottie,
+Bap, Barm, Muffuletta, Piadina, Crescia, Schiacciata, Carasau, Pane Toscano, Michetta, `);
+
+C('spice', 'Food & Drink', 'Name a spice or herb', 'spice or herb', `
+Pepper/Black Pepper, Cinnamon, Basil, Oregano, Thyme, Rosemary, Paprika, Cumin, Turmeric, Ginger, Nutmeg, Cloves,
+Parsley, Mint, Sage, Dill, Cilantro/Coriander, Chili/Chilli, Cayenne, Vanilla, Saffron, Cardamom, Bay Leaf,
+Tarragon, Chives, Fennel Seed, Mustard Seed, Allspice, Star Anise, Anise, Caraway, Poppy Seed, Sesame Seed,
+Curry Powder, Garam Masala, Marjoram, Lemongrass, Fenugreek, Sumac, Asafoetida, Grains of Paradise, Mahleb,
+Ajwain, Galangal, Epazote, Nigella/Black Cumin, Long Pepper, Annatto, Mace, Lovage, Costmary, Za'atar, Juniper Berry,
+Szechuan Pepper/Sichuan Pepper, Kaffir Lime Leaf/Makrut Lime Leaf, Curry Leaf, Pandan, Shiso, Perilla, Lavender,
+Chervil, Borage, Hyssop, Savory, Angelica, Sweet Cicely, Woodruff, Tonka Bean, Mastic, Kokum, Amchur,
+Black Cardamom, Cubeb, Pink Peppercorn, Urfa Biber, Aleppo Pepper, Ancho, Chipotle, Habanero, Sorrel, Wattleseed,
+Lemon Myrtle, Native Pepper, Strawberry Gum, Alexanders, Rue, Lemon Balm, Bergamot, Catnip, Winter Savory,
+Culantro, Papalo, Hoja Santa, Chepil, Huacatay, Rau Ram, Vietnamese Coriander, Wasabi, Zedoary, Sassafras
+`);
+
+C('soup', 'Food & Drink', 'Name a soup or stew', 'soup', `
+Tomato Soup, Chicken Noodle Soup/Chicken Soup, Minestrone, Pho, Ramen, Gazpacho, Borscht, Clam Chowder/Chowder,
+French Onion Soup/Onion Soup, Miso Soup, Bisque, Gumbo, Goulash, Bouillabaisse, Vichyssoise, Cock-a-leekie,
+Cullen Skink, Mulligatawny, Pozole, Menudo, Tom Yum, Laksa, Harira, Ribollita, Avgolemono, Callaloo, Cawl,
+Scotch Broth, Stracciatella, Pasta e Fagioli, Egusi, Okroshka, Solyanka, Shchi, Ukha, Rassolnik, Cabbage Soup,
+Sopa de Lima, Caldo Verde, Sancocho, Ajiaco, Chupe, Bak Kut Teh, Sinigang, Tinola, Sundubu, Samgyetang,
+Tonjiru, Pea Soup, Lentil Soup, Split Pea Soup, Mushroom Soup, Potato Soup, Broccoli Cheddar Soup, Wonton Soup,
+Hot and Sour Soup, Egg Drop Soup, Corn Chowder, Beef Stew, Irish Stew, Lancashire Hotpot, Cassoulet, Ratatouille,
+Pot-au-feu, Garbure, Waterzooi, Stoemp, Bouneschlupp, Zurek, Kapusniak, Chlodnik, Tarator, Shorba, Ezogelin,
+Lablabi, Chorba, Jjigae, Kimchi Jjigae, Nikujaga, Oden, Tom Kha, Khao Soi, Cambodian Kuy Teav, Bun Bo Hue,
+Cao Lau, Mohinga, Ohn No Khao Swe, Rasam, Sambar, Dal, Shorbat Adas, Fasolada, Soupe au Pistou, Aigo Boulido
+`);
+
+C('pizza', 'Food & Drink', 'Name a pizza topping', 'pizza topping', `
+Pepperoni, Mushrooms/Mushroom, Sausage, Onions/Onion, Bacon, Olives/Olive, Peppers/Green Peppers, Pineapple, Ham,
+Spinach, Tomato/Tomatoes, Basil, Anchovies/Anchovy, Chicken, Beef/Ground Beef, Garlic, Jalapeño/Jalapeno,
+Artichoke/Artichoke Hearts, Prosciutto, Arugula/Rocket, Ricotta, Gorgonzola, Capers, Salami, Chorizo,
+Sweetcorn/Corn, Egg, Truffle, Nduja, Pesto, Eggplant/Aubergine, Sun-dried Tomatoes, BBQ Sauce, Buffalo Chicken,
+Clams, Potato, Rosemary, Fig, Honey/Hot Honey, Pear, Pistachio, Speck, Guanciale, Lardo, Burrata, Stracciatella,
+Bottarga, Mozzarella, Parmesan, Cheddar, Goat Cheese, Feta, Blue Cheese, Provolone, Oregano, Red Onion,
+Banana Peppers, Pepperoncini, Giardiniera, Meatballs, Italian Sausage, Canadian Bacon, Shrimp, Tuna, Squid,
+Mussels, Zucchini, Broccoli, Cauliflower, Kale, Asparagus, Leeks, Butternut Squash, Radicchio, Lemon, Chili Flakes,
+Calabrian Chili, Pickled Chilies, Soppressata, Bresaola, Porchetta, Pancetta, Culatello
+`);
+
+C('japanese_food', 'Food & Drink', 'Name a Japanese food or dish', 'Japanese dish', `
+Sushi, Ramen, Tempura, Teriyaki, Sashimi, Udon, Soba, Miso Soup, Tonkatsu, Katsudon, Onigiri, Gyoza, Yakitori,
+Okonomiyaki, Takoyaki, Mochi, Edamame, Sukiyaki, Shabu-shabu, Unagi, Karaage, Yakisoba, Tamagoyaki, Natto, Oden,
+Dorayaki, Taiyaki, Daifuku, Wagashi, Kaiseki, Chawanmushi, Nikujaga, Monjayaki, Kushikatsu, Shiokara, Fugu,
+Hiyayakko, Umeboshi, Tsukemono, Kakigori, Anmitsu, Donburi, Gyudon, Oyakodon, Tendon, Unadon, Omurice, Korokke,
+Katsu Sando, Tamago Sando, Curry Rice/Japanese Curry, Hayashi Rice, Chirashi, Temaki, Nigiri, Maki, Inari,
+Futomaki, Uramaki, Gunkan, Zosui, Ochazuke, Kayu, Tofu, Agedashi Tofu, Yudofu, Nattō Maki, Hijiki, Wakame,
+Kombu, Nori, Dashi, Furikake, Tonjiru, Kenchinjiru, Zoni, Osechi, Mitarashi Dango, Dango, Sakuramochi,
+Kusamochi, Manju, Yokan, Senbei, Taiyaki, Imagawayaki, Castella, Melonpan, Anpan, Yakiniku, Jingisukan,
+Motsunabe, Mizutaki, Chanko Nabe, Kani Nabe, Ankō Nabe/Anko Nabe, Sukiyaki, Hōtō/Hoto, Kiritanpo, Warabimochi,
+Nuta, Sunomono, Ohitashi, Gomae, Kinpira, Chikuzenni, Hiyamugi, Somen, Champon, Sara Udon, Yaki Udon, Tsukimi Udon
+`);
+
+C('coffee', 'Food & Drink', 'Name a coffee drink', 'coffee drink', `
+Latte, Espresso, Cappuccino, Mocha, Americano, Macchiato, Flat White, Cortado, Frappé/Frappe, Iced Coffee,
+Cold Brew, Affogato, Doppio, Ristretto, Lungo, Café au Lait/Cafe au Lait, Irish Coffee, Turkish Coffee,
+Greek Coffee, Vietnamese Coffee/Ca Phe Sua Da, Cafe con Leche, Cafe Bombon, Galão/Galao, Piccolo, Gibraltar,
+Einspänner/Einspanner, Marocchino, Red Eye, Black Eye, Long Black, Short Black, Magic, Breve, Cafe Cubano/Cubano,
+Cafe de Olla, Dalgona Coffee/Dalgona, Nitro Cold Brew/Nitro, Espresso Romano, Caffè Corretto/Corretto, Bicerin,
+Mazagran, Kopi Luwak, Kopi Tubruk, Kopi O, Kopi C, Yuenyeung, Egg Coffee, Cà Phê Trứng, Café Touba, Qahwa,
+Sanka, Instant Coffee, Drip Coffee/Filter Coffee, French Press, Pour Over, Moka Pot, Aeropress, Cafe Latte,
+Caramel Macchiato, Pumpkin Spice Latte/PSL, Chai Latte, Matcha Latte, Cafe Crema, Crema, Café Noisette/Noisette,
+Café Allongé/Allonge, Café Crème/Cafe Creme, Melange, Franziskaner, Verlängerter/Verlangerter, Kapuziner, Mazagran
+`);
+
+C('cocktail', 'Food & Drink', 'Name a cocktail', 'cocktail', `
+Mojito, Margarita, Martini, Old Fashioned, Cosmopolitan, Manhattan, Daiquiri, Piña Colada/Pina Colada, Bloody Mary,
+Mimosa, Moscow Mule, Negroni, Mai Tai, Whiskey Sour, Tequila Sunrise, Long Island Iced Tea, Sex on the Beach,
+White Russian, Black Russian, Gin and Tonic/G&T, Screwdriver, Caipirinha, Aperol Spritz/Spritz, Sangria,
+Gimlet, Sidecar, Singapore Sling, Tom Collins, Sazerac, Aviation, Last Word, Corpse Reviver, Vieux Carré/Vieux Carre,
+Hanky Panky, Paper Plane, Boulevardier, Clover Club, Rob Roy, Bijou, Jungle Bird, Zombie, Hurricane, Dark and Stormy/Dark 'n' Stormy,
+ Rusty Nail, Godfather, Grasshopper, Brandy Alexander, Espresso Martini, Bellini, Kir Royale/Kir,
+Americano, French 75, Sea Breeze, Cape Codder, Bay Breeze, Fuzzy Navel, Harvey Wallbanger, Salty Dog, Greyhound,
+Paloma, Tommy's Margarita, Penicillin, Gold Rush, Bee's Knees, Southside, Pegu Club, Pisco Sour, Ramos Gin Fizz,
+Gin Fizz, Mint Julep, Planter's Punch, Painkiller, Blue Hawaii, Blue Lagoon, Tipperary, Remember the Maine,
+Vesper, Gibson, Pink Lady, White Lady, Monkey Gland, Between the Sheets, Stinger, Rattlesnake, Trinidad Sour,
+Naked and Famous, Division Bell, Sherry Cobbler, Fish House Punch, Philadelphia Fish House Punch, Scofflaw,
+Algonquin, Brooklyn, Red Hook, Greenpoint, Little Italy, Toronto, Cynar Negroni, Cobbler, Flip, Nogroni
+`);
+
+C('beer', 'Food & Drink', 'Name a style of beer', 'beer style', `
+Lager, IPA/India Pale Ale, Stout, Pilsner/Pils, Porter, Pale Ale, Wheat Beer, Hefeweizen, Amber Ale, Brown Ale,
+Bock, Dunkel, Märzen/Marzen, Saison, Lambic, Gose, Berliner Weisse, Kölsch/Kolsch, Altbier, Barleywine,
+Dubbel, Tripel, Quadrupel, Witbier, Gueuze, Kriek, Rauchbier, Schwarzbier, Helles, Doppelbock, Eisbock,
+Steam Beer/California Common, Cream Ale, Mild, Bitter, ESB, Scotch Ale, Wee Heavy, Oatmeal Stout, Milk Stout,
+Imperial Stout, Baltic Porter, Sour Ale/Sour, Radler, Shandy, Kvass, Bière de Garde/Biere de Garde, Grisette,
+Roggenbier, Sahti, Lichtenhainer, Zwickel, Kellerbier, Vienna Lager, Dortmunder, Czech Pilsner, Light Lager,
+Irish Red Ale/Red Ale, Blonde Ale, Golden Ale, Belgian Strong Ale, Flanders Red, Oud Bruin, Faro, Fruit Beer,
+Pumpkin Ale, Black IPA, Session IPA, Double IPA/DIPA, New England IPA/NEIPA/Hazy IPA, West Coast IPA, Brut IPA,
+Cold IPA, Rye Beer, Malt Liquor, Bière Blanche, Weizenbock,
+Dunkelweizen, Kristallweizen, Leichtbier, Maibock, Rauchbock, Gotlandsdricke, `);
+
+C('grape', 'Food & Drink', 'Name a wine grape', 'wine grape', `
+Chardonnay, Merlot, Cabernet Sauvignon, Pinot Noir, Sauvignon Blanc, Riesling, Syrah/Shiraz, Malbec, Zinfandel,
+Pinot Grigio/Pinot Gris, Chenin Blanc, Grenache/Garnacha, Tempranillo, Sangiovese, Nebbiolo, Barbera,
+Gewürztraminer/Gewurztraminer, Viognier, Sémillon/Semillon, Muscat, Gamay, Cabernet Franc, Petit Verdot, Carmenère/Carmenere,
+Tannat, Albariño/Albarino, Verdejo, Grüner Veltliner/Gruner Veltliner, Furmint, Montepulciano, Primitivo,
+Nero d'Avola, Aglianico, Vermentino, Trebbiano, Garganega, Glera, Cortese, Arneis, Dolcetto, Lambrusco,
+Mourvèdre/Mourvedre/Monastrell, Carignan, Cinsault, Marsanne, Roussanne, Picpoul, Muscadet/Melon de Bourgogne,
+Savagnin, Pinotage, Touriga Nacional, Xinomavro, Assyrtiko, Saperavi, Rkatsiteli, Blaufränkisch/Blaufrankisch,
+Zweigelt, Kadarka, Welschriesling, Müller-Thurgau/Muller-Thurgau, Silvaner, Scheurebe, Bacchus, Seyval Blanc,
+Norton, Catawba, Concord, Petite Sirah, Counoise, Picardan, Terret, Aligoté/Aligote, Pinot Blanc, Pinot Meunier,
+Melon, Sylvaner, Trousseau, Poulsard, Jacquère/Jacquere, Mondeuse, Altesse, Fiano, Greco, Falanghina, Coda di Volpe,
+Pecorino, Passerina, Verdicchio, Nosiola, Teroldego, Lagrein, Schiava, Refosco, Ribolla Gialla, Friulano, Picolit
+`);
+
+/* ───────────── ARTS & CULTURE ───────────── */
+
+C('painter', 'Arts & Culture', 'Name a famous painter', 'painter', `
+Picasso/Pablo Picasso, Van Gogh/Vincent van Gogh, Da Vinci/Leonardo da Vinci/Leonardo, Monet/Claude Monet, Michelangelo,
+Rembrandt, Dalí/Salvador Dalí/Dali, Warhol/Andy Warhol, Matisse/Henri Matisse, Kahlo/Frida Kahlo, Munch/Edvard Munch,
+Raphael, Botticelli/Sandro Botticelli, Caravaggio, Renoir/Pierre-Auguste Renoir, Degas/Edgar Degas,
+Cézanne/Paul Cézanne/Cezanne, Manet/Édouard Manet, Gauguin/Paul Gauguin, Seurat/Georges Seurat, Klimt/Gustav Klimt,
+Pollock/Jackson Pollock, Rothko/Mark Rothko, Hopper/Edward Hopper, Magritte/René Magritte, Mondrian/Piet Mondrian,
+Kandinsky/Wassily Kandinsky, Vermeer/Johannes Vermeer, Goya/Francisco Goya, Velázquez/Diego Velázquez/Velazquez,
+El Greco, Titian, Turner/J.M.W. Turner/JMW Turner, Constable/John Constable, Whistler/James McNeill Whistler,
+Sargent/John Singer Sargent, O'Keeffe/Georgia O'Keeffe, Basquiat/Jean-Michel Basquiat, Haring/Keith Haring,
+Lichtenstein/Roy Lichtenstein, Hockney/David Hockney, Banksy, Bosch/Hieronymus Bosch, Bruegel/Pieter Bruegel,
+Dürer/Albrecht Dürer/Durer, Holbein/Hans Holbein, Rubens/Peter Paul Rubens, Van Dyck/Anthony van Dyck,
+Hals/Frans Hals, Chagall/Marc Chagall, Miró/Joan Miró/Miro, Modigliani/Amedeo Modigliani, Schiele/Egon Schiele,
+Kokoschka/Oskar Kokoschka, Klee/Paul Klee, Ernst/Max Ernst, Duchamp/Marcel Duchamp, Rivera/Diego Rivera,
+Kusama/Yayoi Kusama, Hokusai/Katsushika Hokusai, Hiroshige/Utagawa Hiroshige, Murakami/Takashi Murakami,
+Friedrich/Caspar David Friedrich, Delacroix/Eugène Delacroix, Géricault/Theodore Gericault, Courbet/Gustave Courbet,
+Millet/Jean-François Millet, Corot/Camille Corot, Pissarro/Camille Pissarro, Sisley/Alfred Sisley,
+Morisot/Berthe Morisot, Cassatt/Mary Cassatt, Toulouse-Lautrec/Henri de Toulouse-Lautrec, Rousseau/Henri Rousseau,
+Bacon/Francis Bacon, Freud/Lucian Freud, De Kooning/Willem de Kooning, Frankenthaler/Helen Frankenthaler,
+Twombly/Cy Twombly, Rauschenberg/Robert Rauschenberg, Johns/Jasper Johns, Richter/Gerhard Richter,
+Kiefer/Anselm Kiefer, Hammershøi/Vilhelm Hammershøi/Hammershoi, Af Klint/Hilma af Klint,
+Carrington/Leonora Carrington, Varo/Remedios Varo, Tanguy/Yves Tanguy, Gentileschi/Artemisia Gentileschi,
+Vigée Le Brun/Élisabeth Vigée Le Brun, Sorolla/Joaquín Sorolla, Morandi/Giorgio Morandi,
+De Chirico/Giorgio de Chirico, Lam/Wifredo Lam, Arcimboldo/Giuseppe Arcimboldo, Uccello/Paolo Uccello,
+Della Francesca/Piero della Francesca, Mantegna/Andrea Mantegna, Giotto, Bellini/Giovanni Bellini,
+Tintoretto, Veronese/Paolo Veronese, Canaletto, Tiepolo/Giovanni Battista Tiepolo, Zurbarán/Francisco de Zurbarán,
+Murillo/Bartolomé Esteban Murillo, Ribera/Jusepe de Ribera, Poussin/Nicolas Poussin, Claude Lorrain/Lorrain,
+Watteau/Jean-Antoine Watteau, Fragonard/Jean-Honoré Fragonard, Boucher/François Boucher, David/Jacques-Louis David,
+Ingres/Jean-Auguste-Dominique Ingres, Bonheur/Rosa Bonheur, Valadon/Suzanne Valadon, Delaunay/Sonia Delaunay,
+Gontcharova/Natalia Goncharova/Goncharova, Malevich/Kazimir Malevich, Rodchenko/Alexander Rodchenko,
+Repin/Ilya Repin, Aivazovsky/Ivan Aivazovsky, Vrubel/Mikhail Vrubel, Kuindzhi/Arkhip Kuindzhi
+`, { p: 1 });
+
+C('composer', 'Arts & Culture', 'Name a classical composer', 'composer', `
+Beethoven/Ludwig van Beethoven, Mozart/Wolfgang Amadeus Mozart, Bach/Johann Sebastian Bach/J.S. Bach, Chopin/Frédéric Chopin,
+Tchaikovsky/Pyotr Tchaikovsky, Vivaldi/Antonio Vivaldi, Handel/George Frideric Handel, Haydn/Joseph Haydn,
+Schubert/Franz Schubert, Brahms/Johannes Brahms, Liszt/Franz Liszt, Wagner/Richard Wagner, Debussy/Claude Debussy,
+Ravel/Maurice Ravel, Stravinsky/Igor Stravinsky, Mahler/Gustav Mahler, Verdi/Giuseppe Verdi, Puccini/Giacomo Puccini,
+Rossini/Gioachino Rossini, Dvořák/Antonín Dvořák/Dvorak, Grieg/Edvard Grieg, Sibelius/Jean Sibelius,
+Rachmaninoff/Sergei Rachmaninoff/Rachmaninov, Prokofiev/Sergei Prokofiev, Shostakovich/Dmitri Shostakovich,
+Bartók/Béla Bartók/Bartok, Copland/Aaron Copland, Gershwin/George Gershwin, Bernstein/Leonard Bernstein,
+Elgar/Edward Elgar, Holst/Gustav Holst, Vaughan Williams/Ralph Vaughan Williams, Britten/Benjamin Britten,
+Purcell/Henry Purcell, Monteverdi/Claudio Monteverdi, Palestrina/Giovanni Pierluigi da Palestrina,
+Pachelbel/Johann Pachelbel, Telemann/Georg Philipp Telemann, Scarlatti/Domenico Scarlatti, Corelli/Arcangelo Corelli,
+Albinoni/Tomaso Albinoni, Satie/Erik Satie, Fauré/Gabriel Fauré/Faure, Saint-Saëns/Camille Saint-Saëns,
+Bizet/Georges Bizet, Berlioz/Hector Berlioz, Offenbach/Jacques Offenbach, Massenet/Jules Massenet,
+Franck/César Franck, Poulenc/Francis Poulenc, Messiaen/Olivier Messiaen, Boulez/Pierre Boulez,
+Schoenberg/Arnold Schoenberg, Berg/Alban Berg, Webern/Anton Webern, Strauss/Richard Strauss/Johann Strauss,
+Mendelssohn/Felix Mendelssohn, Schumann/Robert Schumann/Clara Schumann, Bruckner/Anton Bruckner,
+Hindemith/Paul Hindemith, Weill/Kurt Weill, Orff/Carl Orff, Janáček/Leoš Janáček/Janacek, Smetana/Bedřich Smetana,
+Martinů/Bohuslav Martinů/Martinu, Penderecki/Krzysztof Penderecki, Górecki/Henryk Górecki/Gorecki,
+Lutosławski/Witold Lutosławski/Lutoslawski, Ligeti/György Ligeti, Kodály/Zoltán Kodály/Kodaly, Enescu/George Enescu,
+Glinka/Mikhail Glinka, Mussorgsky/Modest Mussorgsky, Rimsky-Korsakov/Nikolai Rimsky-Korsakov, Borodin/Alexander Borodin,
+Scriabin/Alexander Scriabin, Glazunov/Alexander Glazunov, Khachaturian/Aram Khachaturian, Schnittke/Alfred Schnittke,
+Pärt/Arvo Pärt/Part, Glass/Philip Glass, Reich/Steve Reich, Adams/John Adams, Cage/John Cage, Ives/Charles Ives,
+Barber/Samuel Barber, Joplin/Scott Joplin, Ellington/Duke Ellington, Williams/John Williams, Zimmer/Hans Zimmer,
+Morricone/Ennio Morricone, Villa-Lobos/Heitor Villa-Lobos, Piazzolla/Astor Piazzolla, Ginastera/Alberto Ginastera,
+Takemitsu/Toru Takemitsu, Xenakis/Iannis Xenakis, Stockhausen/Karlheinz Stockhausen, Buxtehude/Dieterich Buxtehude,
+Gesualdo/Carlo Gesualdo, Hildegard von Bingen/Hildegard, Machaut/Guillaume de Machaut, Dufay/Guillaume Dufay,
+Josquin des Prez/Josquin, Tallis/Thomas Tallis, Byrd/William Byrd, Dowland/John Dowland, Lully/Jean-Baptiste Lully,
+Rameau/Jean-Philippe Rameau, Couperin/François Couperin, Boccherini/Luigi Boccherini, Clementi/Muzio Clementi,
+Paganini/Niccolò Paganini, Donizetti/Gaetano Donizetti, Bellini/Vincenzo Bellini, Respighi/Ottorino Respighi,
+Nono/Luigi Nono, Berio/Luciano Berio, Dallapiccola/Luigi Dallapiccola, Saariaho/Kaija Saariaho, Nielsen/Carl Nielsen,
+Alfvén/Hugo Alfvén, Sørensen/Bent Sørensen, Rautavaara/Einojuhani Rautavaara, Sallinen/Aulis Sallinen
+`, { p: 1 });
+
+C('author', 'Arts & Culture', 'Name a famous author or poet', 'author', `
+Shakespeare/William Shakespeare, Dickens/Charles Dickens, Austen/Jane Austen, Tolkien/J.R.R. Tolkien, Orwell/George Orwell,
+Hemingway/Ernest Hemingway, Twain/Mark Twain, Rowling/J.K. Rowling, Tolstoy/Leo Tolstoy, Dostoevsky/Fyodor Dostoevsky,
+Fitzgerald/F. Scott Fitzgerald, Steinbeck/John Steinbeck, Faulkner/William Faulkner, Woolf/Virginia Woolf,
+Joyce/James Joyce, Wilde/Oscar Wilde, Poe/Edgar Allan Poe, Hugo/Victor Hugo, Dumas/Alexandre Dumas, Verne/Jules Verne,
+Wells/H.G. Wells, Christie/Agatha Christie, King/Stephen King, Seuss/Dr. Seuss, Dahl/Roald Dahl, Lewis/C.S. Lewis,
+Carroll/Lewis Carroll, Kipling/Rudyard Kipling, Brontë/Charlotte Brontë/Emily Brontë/Bronte, Hardy/Thomas Hardy,
+Eliot/George Eliot/T.S. Eliot, Byron/Lord Byron, Keats/John Keats, Shelley/Mary Shelley/Percy Shelley,
+Wordsworth/William Wordsworth, Coleridge/Samuel Taylor Coleridge, Milton/John Milton, Chaucer/Geoffrey Chaucer,
+Dante/Dante Alighieri, Homer, Virgil, Ovid, Goethe/Johann Wolfgang von Goethe, Kafka/Franz Kafka, Mann/Thomas Mann,
+Hesse/Hermann Hesse, Camus/Albert Camus, Proust/Marcel Proust, Flaubert/Gustave Flaubert, Balzac/Honoré de Balzac,
+Zola/Émile Zola, Cervantes/Miguel de Cervantes, García Márquez/Gabriel García Márquez/Garcia Marquez, Borges/Jorge Luis Borges,
+Neruda/Pablo Neruda, Allende/Isabel Allende, Paz/Octavio Paz, Murakami/Haruki Murakami, Mishima/Yukio Mishima,
+Kawabata/Yasunari Kawabata, Tanizaki/Junichirō Tanizaki, Sōseki/Natsume Sōseki/Soseki, Achebe/Chinua Achebe,
+Soyinka/Wole Soyinka, Adichie/Chimamanda Ngozi Adichie, Ngũgĩ/Ngũgĩ wa Thiong'o/Ngugi, Coetzee/J.M. Coetzee,
+Gordimer/Nadine Gordimer, Naipaul/V.S. Naipaul, Rushdie/Salman Rushdie, Roy/Arundhati Roy, Tagore/Rabindranath Tagore,
+Pamuk/Orhan Pamuk, Mahfouz/Naguib Mahfouz, Gibran/Kahlil Gibran, Rumi, Hafez, Khayyam/Omar Khayyam,
+Atwood/Margaret Atwood, Munro/Alice Munro, Morrison/Toni Morrison, Angelou/Maya Angelou, Baldwin/James Baldwin,
+Ellison/Ralph Ellison, Whitman/Walt Whitman, Dickinson/Emily Dickinson, Frost/Robert Frost, Plath/Sylvia Plath,
+Salinger/J.D. Salinger, Vonnegut/Kurt Vonnegut, Heller/Joseph Heller, Kerouac/Jack Kerouac, Nabokov/Vladimir Nabokov,
+Pynchon/Thomas Pynchon, DeLillo/Don DeLillo, Roth/Philip Roth, Bellow/Saul Bellow, Updike/John Updike,
+Carver/Raymond Carver, McCarthy/Cormac McCarthy, Le Guin/Ursula K. Le Guin, Asimov/Isaac Asimov,
+Clarke/Arthur C. Clarke, Heinlein/Robert Heinlein, Herbert/Frank Herbert, Dick/Philip K. Dick, Gibson/William Gibson,
+Pratchett/Terry Pratchett, Gaiman/Neil Gaiman, Martin/George R.R. Martin, Sebald/W.G. Sebald, Calvino/Italo Calvino,
+Eco/Umberto Eco, Ferrante/Elena Ferrante, Pessoa/Fernando Pessoa, Saramago/José Saramago, Lispector/Clarice Lispector,
+Machado de Assis, Perec/Georges Perec, Queneau/Raymond Queneau, Musil/Robert Musil, Bulgakov/Mikhail Bulgakov,
+Gogol/Nikolai Gogol, Pushkin/Alexander Pushkin, Chekhov/Anton Chekhov, Turgenev/Ivan Turgenev,
+Solzhenitsyn/Aleksandr Solzhenitsyn, Pasternak/Boris Pasternak, Akhmatova/Anna Akhmatova, Mandelstam/Osip Mandelstam,
+Cortázar/Julio Cortázar/Cortazar, Bolaño/Roberto Bolaño/Bolano, Rulfo/Juan Rulfo, Ishiguro/Kazuo Ishiguro,
+Mantel/Hilary Mantel, McEwan/Ian McEwan, Greene/Graham Greene, Waugh/Evelyn Waugh, Forster/E.M. Forster,
+Lawrence/D.H. Lawrence, Conrad/Joseph Conrad, Stoker/Bram Stoker, Doyle/Arthur Conan Doyle/Conan Doyle,
+Stevenson/Robert Louis Stevenson, Defoe/Daniel Defoe, Swift/Jonathan Swift, Sterne/Laurence Sterne,
+Lagerlöf/Selma Lagerlöf/Lagerlof, Lindgren/Astrid Lindgren, Jansson/Tove Jansson, Ibsen/Henrik Ibsen,
+Strindberg/August Strindberg, Hamsun/Knut Hamsun, Andersen/Hans Christian Andersen, Kierkegaard/Søren Kierkegaard,
+Laxness/Halldór Laxness, Szymborska/Wisława Szymborska, Miłosz/Czesław Miłosz/Milosz, Herbert/Zbigniew Herbert,
+Kundera/Milan Kundera, Hašek/Jaroslav Hašek/Hasek, Havel/Václav Havel, Kertész/Imre Kertész/Kertesz,
+Krasznahorkai/László Krasznahorkai, Andrić/Ivo Andrić/Andric, Kiš/Danilo Kiš/Kis, Kadare/Ismail Kadare
+`, { p: 1 });
+
+C('philosopher', 'Arts & Culture', 'Name a philosopher', 'philosopher', `
+Socrates, Plato, Aristotle, Nietzsche/Friedrich Nietzsche, Kant/Immanuel Kant, Descartes/René Descartes,
+Confucius, Marx/Karl Marx, Sartre/Jean-Paul Sartre, Locke/John Locke, Hume/David Hume, Hobbes/Thomas Hobbes,
+Rousseau/Jean-Jacques Rousseau, Voltaire, Camus/Albert Camus, Kierkegaard/Søren Kierkegaard, Hegel/G.W.F. Hegel,
+Schopenhauer/Arthur Schopenhauer, Wittgenstein/Ludwig Wittgenstein, Russell/Bertrand Russell,
+De Beauvoir/Simone de Beauvoir, Lao Tzu/Laozi, Aquinas/Thomas Aquinas, Augustine/Saint Augustine, Spinoza/Baruch Spinoza,
+Leibniz/Gottfried Leibniz, Heidegger/Martin Heidegger, Foucault/Michel Foucault, Arendt/Hannah Arendt,
+Epicurus, Seneca, Marcus Aurelius, Epictetus, Diogenes, Zeno, Heraclitus, Parmenides, Pythagoras, Thales,
+Democritus, Anaximander, Averroes/Ibn Rushd, Avicenna/Ibn Sina, Maimonides, Nagarjuna, Mencius, Zhuangzi,
+Mozi, Xunzi, Han Fei, Al-Ghazali/Ghazali, Ibn Khaldun, Hypatia, Boethius, Ockham/William of Ockham,
+Duns Scotus, Anselm/Anselm of Canterbury, Abelard/Peter Abelard, Pascal/Blaise Pascal, Montaigne/Michel de Montaigne,
+Erasmus, Bacon/Francis Bacon, Berkeley/George Berkeley, Bentham/Jeremy Bentham, Mill/John Stuart Mill,
+Rawls/John Rawls, Nozick/Robert Nozick, Popper/Karl Popper, Kuhn/Thomas Kuhn, Quine/W.V.O. Quine, Kripke/Saul Kripke,
+Deleuze/Gilles Deleuze, Derrida/Jacques Derrida, Merleau-Ponty/Maurice Merleau-Ponty, Husserl/Edmund Husserl,
+Gadamer/Hans-Georg Gadamer, Habermas/Jürgen Habermas, Adorno/Theodor Adorno, Weil/Simone Weil,
+Murdoch/Iris Murdoch, Anscombe/Elizabeth Anscombe, Foot/Philippa Foot, Parfit/Derek Parfit, Singer/Peter Singer,
+Nussbaum/Martha Nussbaum, Butler/Judith Butler, Zizek/Slavoj Žižek, Chomsky/Noam Chomsky, Searle/John Searle,
+Dennett/Daniel Dennett, Chalmers/David Chalmers, Nagel/Thomas Nagel, Rorty/Richard Rorty, Putnam/Hilary Putnam,
+Lewis/David Lewis, Plantinga/Alvin Plantinga, Dewey/John Dewey, Peirce/Charles Sanders Peirce, James/William James,
+Emerson/Ralph Waldo Emerson, Thoreau/Henry David Thoreau, Santayana/George Santayana, Whitehead/Alfred North Whitehead,
+Bergson/Henri Bergson, Levinas/Emmanuel Levinas, Ricoeur/Paul Ricoeur, Badiou/Alain Badiou, Agamben/Giorgio Agamben,
+Nishida/Kitarō Nishida, Dōgen/Dogen, Watsuji/Tetsuro Watsuji, Zhu Xi, Wang Yangming, Shankara/Adi Shankara,
+Ramanuja, Dharmakirti, Candrakirti, Nishitani/Keiji Nishitani, Plotinus, Proclus, Iamblichus, Porphyry
+`, { p: 1 });
+
+C('scientist', 'Science & Space', 'Name a famous scientist', 'scientist', `
+Einstein/Albert Einstein, Newton/Isaac Newton, Darwin/Charles Darwin, Curie/Marie Curie, Galileo/Galileo Galilei,
+Tesla/Nikola Tesla, Hawking/Stephen Hawking, Edison/Thomas Edison, Pasteur/Louis Pasteur, Faraday/Michael Faraday,
+Maxwell/James Clerk Maxwell, Bohr/Niels Bohr, Heisenberg/Werner Heisenberg, Schrödinger/Erwin Schrödinger/Schrodinger,
+Feynman/Richard Feynman, Planck/Max Planck, Copernicus/Nicolaus Copernicus, Kepler/Johannes Kepler, Mendel/Gregor Mendel,
+Fleming/Alexander Fleming, Lovelace/Ada Lovelace, Turing/Alan Turing, Franklin/Benjamin Franklin/Rosalind Franklin,
+Hubble/Edwin Hubble, Sagan/Carl Sagan, Goodall/Jane Goodall, Lavoisier/Antoine Lavoisier, Dalton/John Dalton,
+Mendeleev/Dmitri Mendeleev, Rutherford/Ernest Rutherford, Thomson/J.J. Thomson, Pavlov/Ivan Pavlov, Hooke/Robert Hooke,
+Boyle/Robert Boyle, Halley/Edmond Halley, Leeuwenhoek/Antonie van Leeuwenhoek, Linnaeus/Carl Linnaeus,
+Humboldt/Alexander von Humboldt, Lyell/Charles Lyell, Wallace/Alfred Russel Wallace, Huxley/Thomas Huxley,
+Watson/James Watson, Crick/Francis Crick, Noether/Emmy Noether, Meitner/Lise Meitner, Hodgkin/Dorothy Hodgkin,
+McClintock/Barbara McClintock, Payne/Cecilia Payne, Leavitt/Henrietta Leavitt, Chandrasekhar/Subrahmanyan Chandrasekhar,
+Bose/Satyendra Nath Bose, Raman/C.V. Raman, Ramanujan/Srinivasa Ramanujan, Gauss/Carl Friedrich Gauss, Euler/Leonhard Euler,
+Euclid, Archimedes, Pythagoras, Hypatia, Al-Khwarizmi/Khwarizmi, Ibn al-Haytham/Alhazen, Fibonacci,
+Fermat/Pierre de Fermat, Pascal/Blaise Pascal, Leibniz/Gottfried Leibniz, Riemann/Bernhard Riemann, Hilbert/David Hilbert,
+Gödel/Kurt Gödel/Godel, Cantor/Georg Cantor, Poincaré/Henri Poincaré/Poincare, Lagrange/Joseph-Louis Lagrange,
+Laplace/Pierre-Simon Laplace, Fourier/Joseph Fourier, Bernoulli/Daniel Bernoulli, Hertz/Heinrich Hertz,
+Röntgen/Wilhelm Röntgen/Roentgen, Becquerel/Henri Becquerel, Dirac/Paul Dirac, Fermi/Enrico Fermi,
+Oppenheimer/J. Robert Oppenheimer, Pauli/Wolfgang Pauli, Born/Max Born, Compton/Arthur Compton,
+Millikan/Robert Millikan, Penrose/Roger Penrose, Higgs/Peter Higgs, Salam/Abdus Salam, Chadwick/James Chadwick,
+Goddard/Robert Goddard, Von Braun/Wernher von Braun, Tsiolkovsky/Konstantin Tsiolkovsky, Gagarin/Yuri Gagarin,
+Lamarr/Hedy Lamarr, Hopper/Grace Hopper, Berners-Lee/Tim Berners-Lee, Shannon/Claude Shannon, Von Neumann/John von Neumann,
+Babbage/Charles Babbage, Hubble, Lemaître/Georges Lemaître/Lemaitre, Eddington/Arthur Eddington, Rubin/Vera Rubin,
+Bell Burnell/Jocelyn Bell Burnell, Herschel/William Herschel/Caroline Herschel, Brahe/Tycho Brahe, Cannon/Annie Jump Cannon,
+Ørsted/Hans Christian Ørsted/Orsted, Ampère/André-Marie Ampère/Ampere, Volta/Alessandro Volta, Galvani/Luigi Galvani,
+Joule/James Prescott Joule, Kelvin/Lord Kelvin, Carnot/Sadi Carnot, Clausius/Rudolf Clausius, Boltzmann/Ludwig Boltzmann,
+Gibbs/Josiah Willard Gibbs, Avogadro/Amedeo Avogadro, Berzelius/Jöns Jacob Berzelius, Nobel/Alfred Nobel,
+Haber/Fritz Haber, Bosch/Carl Bosch, Ostwald/Wilhelm Ostwald, Arrhenius/Svante Arrhenius, Le Chatelier/Henri Le Chatelier
+`, { p: 1 });
+
+C('shakespeare', 'Arts & Culture', 'Name a Shakespeare play', 'Shakespeare play', `
+Hamlet, Romeo and Juliet, Macbeth, Othello, King Lear, A Midsummer Night's Dream/Midsummer Night's Dream,
+The Tempest/Tempest, Julius Caesar, Much Ado About Nothing, Twelfth Night, As You Like It,
+The Merchant of Venice/Merchant of Venice, The Taming of the Shrew/Taming of the Shrew, Richard III/Richard 3,
+Henry V/Henry 5, Antony and Cleopatra, The Winter's Tale/Winter's Tale, Measure for Measure,
+The Comedy of Errors/Comedy of Errors, Titus Andronicus, Coriolanus, Cymbeline, Pericles,
+Troilus and Cressida, Timon of Athens, All's Well That Ends Well, Love's Labour's Lost,
+The Two Gentlemen of Verona/Two Gentlemen of Verona, The Merry Wives of Windsor/Merry Wives of Windsor,
+Richard II/Richard 2, Henry IV Part 1/Henry IV/Henry 4, Henry IV Part 2, Henry VI Part 1/Henry VI/Henry 6,
+Henry VI Part 2, Henry VI Part 3, Henry VIII/Henry 8, King John, The Two Noble Kinsmen/Two Noble Kinsmen
+`);
+
+C('ghibli', 'Arts & Culture', 'Name a Studio Ghibli film', 'Ghibli film', `
+Spirited Away, My Neighbor Totoro/Totoro, Howl's Moving Castle, Princess Mononoke, Kiki's Delivery Service,
+Ponyo, Castle in the Sky/Laputa, Grave of the Fireflies, The Wind Rises/Wind Rises, Porco Rosso,
+Nausicaä of the Valley of the Wind/Nausicaa, Whisper of the Heart, The Cat Returns/Cat Returns, Arrietty/The Secret World of Arrietty,
+From Up on Poppy Hill, The Tale of the Princess Kaguya/Princess Kaguya, When Marnie Was There, Only Yesterday,
+Pom Poko, Ocean Waves, My Neighbors the Yamadas/The Yamadas, Tales from Earthsea/Earthsea, Earwig and the Witch,
+The Boy and the Heron/Boy and the Heron
+`);
+
+C('pixar', 'Arts & Culture', 'Name a Pixar film', 'Pixar film', `
+Toy Story, Finding Nemo, Monsters Inc./Monsters Inc, The Incredibles/Incredibles, Cars, Up, Inside Out, Coco,
+Ratatouille, WALL-E/Wall E, Brave, Toy Story 2, Toy Story 3, Toy Story 4, A Bug's Life/Bugs Life, Finding Dory,
+Monsters University, The Good Dinosaur/Good Dinosaur, Onward, Soul, Luca, Turning Red, Lightyear,
+Elemental, Incredibles 2, Cars 2, Cars 3, Inside Out 2
+`);
+
+C('instrument', 'Arts & Culture', 'Name a musical instrument', 'instrument', `
+Piano, Guitar, Violin, Drums, Flute, Trumpet, Saxophone, Cello, Clarinet, Harp, Trombone, Bass Guitar/Bass,
+Ukulele, Banjo, Accordion, Harmonica, Organ, Tuba, Oboe, Bassoon, Xylophone, Tambourine, Triangle, Cymbals,
+Viola, Double Bass/Upright Bass, French Horn/Horn, Piccolo, Mandolin, Synthesizer/Synth, Keyboard,
+Bagpipes, Recorder, Kazoo, Maracas, Castanets, Bongos, Congas, Timpani, Glockenspiel, Marimba, Vibraphone,
+Celesta, Harpsichord, Clavichord, Lute, Sitar, Tabla, Didgeridoo, Djembe, Steel Drum/Steelpan, Cowbell,
+Zither, Dulcimer, Autoharp, Balalaika, Bouzouki, Oud, Shamisen, Koto, Erhu, Pipa, Guzheng, Sheng, Shakuhachi,
+Gamelan, Theremin, Hurdy-gurdy/Hurdy Gurdy, Nyckelharpa, Ondes Martenot, Glass Harmonica, Serpent, Sackbut,
+Crumhorn, Hang Drum/Hang, Kantele, Duduk, Cimbalom, Ocarina, Charango, Jew's Harp/Jaw Harp, Bandoneon,
+Harmonium, Melodica, Lyre, Kora, Mbira/Kalimba, Balafon, Berimbau, Cajón/Cajon, Bodhrán/Bodhran, Uilleann Pipes,
+Tin Whistle/Penny Whistle, Panpipes/Pan Flute, Conch, Shofar, Alphorn, Sarrusophone, Heckelphone, Contrabassoon,
+Basset Horn, Euphonium, Sousaphone, Flugelhorn, Cornet, Ophicleide, Cornett, Rebec, Viol/Viola da Gamba,
+Baryton, Theorbo, Cittern, Gittern, Vielle, Psaltery, Tromba Marina, Nyatiti, Ngoni, Xalam, Valiha, Sanxian, Ruan,
+Yangqin, Morin Khuur/Horsehead Fiddle, Tanbur, Santoor, Sarod, Veena, Sarangi, Esraj, Dilruba, Surbahar, Rubab
+`);
+
+C('dance', 'Arts & Culture', 'Name a style of dance', 'dance', `
+Ballet, Hip Hop, Waltz, Tango, Salsa, Breakdance/Breaking, Tap, Jazz, Ballroom, Swing, Flamenco, Line Dance,
+Square Dance, Cha-cha/Cha Cha, Foxtrot, Quickstep, Jive, Paso Doble, Bachata, Merengue, Samba, Rumba, Polka,
+Bhangra, Kathak, Bharatanatyam, Haka, Hula, Capoeira, Charleston, Lindy Hop, Jitterbug, Twist, Macarena,
+Contemporary, Modern Dance, Folk Dance, Irish Dance/Riverdance, Highland Dance, Morris Dance, Mazurka,
+Tarantella, Zouk, Kizomba, Krump, Voguing, Popping, Locking, Bossa Nova, Cumbia, Hornpipe, Strathspey,
+Sirtaki/Zorba, Hopak, Kolo, Horo, Gavotte, Minuet, Pavane, Galliard, Sardana, Bolero, Fandango, Jota,
+Schuhplattler, Belly Dance, Pole Dance, Can-can/Cancan, Cakewalk, Shag, Mambo, Lambada, Zumba, Zydeco Dance,
+Kuduro, Afrobeats Dance, Gwara Gwara, Azonto, Pantsula, Gumboot Dance, Bhangra, Garba, Dandiya, Kuchipudi,
+Odissi, Manipuri, Mohiniyattam, Kathakali, Chhau, Bihu, Lavani, Ghoomar, Tinikling, Cariñosa, Dabke, Raqs Sharqi,
+Sema, Zeybek, Halay, Hora, Sirtos, Kalamatianos, Csárdás/Csardas, Verbunkos, Krakowiak, Oberek,
+Polonaise, Kamarinskaya, Kazachok, Trepak, Khorovod, Lezginka, Sampo, Bergamasca
+`);
+
+C('genre', 'Arts & Culture', 'Name a music genre', 'music genre', `
+Rock, Pop, Jazz, Hip Hop/Rap, Country, Classical, Blues, Reggae, Metal/Heavy Metal, Punk, Soul, Funk, Disco, R&B,
+Electronic, House, Techno, Trance, Dubstep, Drum and Bass/DnB, Folk, Gospel, Opera, Latin, Salsa, K-pop, J-pop,
+Indie, Alternative, Grunge, Emo, Ska, Dancehall, Afrobeat, Amapiano, Cumbia, City Pop, Bluegrass, Honky-tonk,
+Surf Rock, Math Rock, Post-rock, Grindcore, Djent, Chiptune, Hyperpop, Witch House, Slowcore, Shoegaze, Krautrock,
+Zydeco, Rebetiko, Fado, Mbalax, Highlife, Soca, Bossa Nova, Vaporwave, Trip Hop, Drill, Grime, Skiffle, Merseybeat,
+Gabber, Bhangra, Qawwali, Mariachi, Klezmer, Ragtime, Bebop, Swing, Big Band, Doo-wop, Motown, Northern Soul,
+Britpop, New Wave, Synthpop, Post-punk, Goth/Gothic Rock, Industrial, Ambient, Lo-fi, Chillwave, Downtempo,
+Garage, UK Garage, Jungle, Breakbeat, Hardstyle, Eurodance, Italo Disco, Balearic Beat, Acid House,
+Tropical House, Moombahton, Reggaeton, Dembow, Bachata, Vallenato, Norteño, Banda, Tejano, Ranchera,
+Bolero, Tango, Chanson, Schlager, Volksmusik, Rai, Gnawa, Mahraganat, Dabke, Tuareg Blues, Desert Blues,
+Soukous, Rumba Congolaise, Kwaito, Maskandi, Isicathamiya, Benga, Taarab, Bongo Flava, Genge, Gqom,
+Throat Singing, Gamelan, Dangdut, Keroncong, Luk Thung, Mor Lam, Enka, Min'yō, Gagaku, Pansori, Trot,
+Cantopop, Mandopop, Nueva Canción, Tropicália, Música Popular Brasileira/MPB, Forró, Axé, Sertanejo, Choro, Samba-canção
+`);
+
+/* ───────────── SCIENCE & SPACE ───────────── */
+
+C('element', 'Science & Space', 'Name a chemical element', 'chemical element', `
+Oxygen, Hydrogen, Carbon, Gold, Iron, Helium, Nitrogen, Silver, Sodium, Calcium, Copper, Lead, Mercury, Uranium,
+Zinc, Aluminum/Aluminium, Tin, Neon, Chlorine, Potassium, Sulfur/Sulphur, Silicon, Magnesium, Phosphorus, Lithium,
+Platinum, Nickel, Titanium, Argon, Plutonium, Radium, Fluorine, Iodine, Chromium, Cobalt, Boron, Tungsten, Arsenic,
+Barium, Bromine, Krypton, Xenon, Radon, Beryllium, Manganese, Cadmium, Antimony, Bismuth, Selenium, Strontium,
+Zirconium, Vanadium, Molybdenum, Palladium, Rhodium, Iridium, Osmium, Cesium/Caesium, Rubidium, Francium,
+Polonium, Thorium, Neptunium, Americium, Curium, Berkelium, Californium, Einsteinium, Fermium, Mendelevium,
+Nobelium, Lawrencium, Rutherfordium, Dubnium, Seaborgium, Bohrium, Hassium, Meitnerium, Darmstadtium,
+Roentgenium, Copernicium, Nihonium, Flerovium, Moscovium, Livermorium, Tennessine, Oganesson, Gallium,
+Germanium, Indium, Tellurium, Hafnium, Tantalum, Rhenium, Technetium, Ruthenium, Niobium, Yttrium, Scandium,
+Thallium, Astatine, Actinium, Protactinium, Lanthanum, Cerium, Praseodymium, Neodymium, Promethium, Samarium,
+Europium, Gadolinium, Terbium, Dysprosium, Holmium, Erbium, Thulium, Ytterbium, Lutetium
+`);
+
+C('rock', 'Science & Space', 'Name a rock, mineral or gemstone', 'rock or gem', `
+Granite, Marble, Limestone, Sandstone, Basalt, Obsidian, Quartz, Diamond, Ruby, Emerald, Sapphire, Amethyst, Opal,
+Topaz, Garnet, Jade, Turquoise, Onyx, Pyrite/Fool's Gold, Coal, Slate, Gneiss, Shale, Pumice, Flint, Chalk,
+Gypsum, Talc, Mica, Feldspar, Calcite, Fluorite, Malachite, Lapis Lazuli/Lapis, Agate, Jasper, Moonstone,
+Aquamarine, Peridot, Tourmaline, Citrine, Tanzanite, Alexandrite, Rose Quartz, Smoky Quartz, Tiger's Eye,
+Bloodstone, Carnelian, Chalcedony, Hematite, Magnetite, Galena, Bauxite, Cinnabar, Azurite, Rhodonite, Sodalite,
+Labradorite, Larimar, Kyanite, Apatite, Beryl, Zircon, Spinel, Corundum, Serpentine, Soapstone, Schist,
+Quartzite, Dolomite, Travertine, Tuff, Scoria, Rhyolite, Andesite, Diorite, Gabbro, Peridotite, Kimberlite,
+Dunite, Pegmatite, Anorthosite, Eclogite, Amphibolite, Marl, Chert, Siltstone, Mudstone, Conglomerate, Breccia,
+Hornfels, Painite, Benitoite, Taaffeite, Jeremejevite, Grandidierite, Musgravite, Poudretteite, Serendibite,
+Red Beryl, Moissanite, Pearl, Amber, Coral, Jet, Ivory, Sphalerite, Rhodochrosite, Charoite, Sugilite, Iolite,
+Sunstone, Heliodor, Morganite, Kunzite, Hiddenite, Tsavorite, Demantoid, Rubellite, Indicolite, Paraiba, Sphene,
+Danburite, Scheelite, Zoisite, Axinite, Apophyllite, Stilbite, Natrolite, Prehnite, Datolite, Hemimorphite
+`);
+
+C('constellation', 'Science & Space', 'Name a constellation', 'constellation', `
+Orion, Ursa Major/Big Dipper, Scorpius/Scorpio, Leo, Gemini, Taurus, Cassiopeia, Cygnus, Sagittarius, Aries, Cancer,
+Virgo, Libra, Capricornus/Capricorn, Aquarius, Pisces, Ursa Minor/Little Dipper, Andromeda, Pegasus, Perseus,
+Draco, Lyra, Aquila, Hercules, Canis Major, Canis Minor, Crux/Southern Cross, Centaurus, Cepheus, Auriga,
+Boötes/Bootes, Cetus, Eridanus, Hydra, Ophiuchus, Phoenix, Pavo, Corona Borealis, Delphinus, Lupus, Lepus,
+Corvus, Carina, Vela, Puppis, Lacerta, Lynx, Sextans, Microscopium, Telescopium, Antlia, Pyxis, Norma, Mensa,
+Octans, Musca, Apus, Pictor, Fornax, Horologium, Reticulum, Caelum, Volans, Circinus, Chamaeleon,
+Triangulum Australe, Equuleus, Sagitta, Vulpecula, Scutum, Leo Minor, Canes Venatici, Coma Berenices,
+Camelopardalis, Monoceros, Columba, Crater, Dorado, Grus, Hydrus, Indus, Piscis Austrinus, Sculptor, Triangulum,
+Tucana, Corona Australis, Ara, Serpens
+`);
+
+C('moon', 'Science & Space', 'Name a moon in our solar system', 'moon', `
+Moon/Luna, Titan, Europa, Io, Ganymede, Callisto, Phobos, Deimos, Triton, Enceladus, Charon, Mimas, Rhea,
+Iapetus, Dione, Tethys, Oberon, Titania, Miranda, Ariel, Umbriel, Hyperion, Phoebe, Nereid, Proteus,
+Amalthea, Himalia, Janus, Epimetheus, Pan, Atlas, Prometheus, Pandora, Puck, Larissa, Despina, Thebe,
+Elara, Metis, Adrastea, Galatea, Naiad, Thalassa, Hippocamp, Styx, Nix, Hydra, Kerberos, Dysnomia, Weywot, Hiʻiaka/Hiiaka,
+Namaka, Ilmarë/Ilmare, Vanth, Xiangliu, Actaea, Ersa, Pandia, Carpo, Ananke, Carme, Pasiphae, Sinope, Lysithea
+`);
+
+C('bone', 'Science & Space', 'Name a bone in the human body', 'bone', `
+Skull, Femur, Rib, Spine/Vertebra/Vertebrae/Backbone, Pelvis, Tibia, Humerus, Clavicle/Collarbone,
+Scapula/Shoulder Blade, Radius, Ulna, Sternum/Breastbone, Patella/Kneecap, Fibula, Mandible/Jawbone, Coccyx/Tailbone,
+Sacrum, Cranium, Phalanges/Phalanx, Metacarpals, Metatarsals, Carpals, Tarsals, Talus, Calcaneus/Heel Bone,
+Navicular, Cuboid, Cuneiform, Scaphoid, Lunate, Triquetrum, Pisiform, Trapezium, Trapezoid, Capitate, Hamate,
+Maxilla, Zygomatic/Cheekbone, Nasal Bone, Lacrimal, Palatine, Vomer, Hyoid, Temporal, Parietal, Frontal,
+Occipital, Sphenoid, Ethmoid, Malleus/Hammer, Incus/Anvil, Stapes/Stirrup, Atlas, Axis, Ilium, Ischium, Pubis,
+Sesamoid, Xiphoid Process/Xiphoid, Manubrium, Inferior Nasal Concha, `, { strip: ['bone', 'bones'] });
+
+C('organ', 'Science & Space', 'Name an organ or gland in the human body', 'organ or gland', `
+Heart, Brain, Lungs/Lung, Liver, Kidney/Kidneys, Stomach, Skin, Intestines/Small Intestine/Large Intestine,
+Bladder, Spleen, Pancreas, Gallbladder, Thymus, Appendix, Adrenal Gland/Adrenals, Pituitary Gland/Pituitary,
+Pineal Gland/Pineal, Thyroid, Esophagus/Oesophagus, Larynx, Trachea, Duodenum, Ileum, Jejunum, Cecum/Caecum,
+Parathyroid, Hypothalamus, Cerebellum, Amygdala, Colon, Rectum, Prostate, Uterus/Womb, Ovary, Testis/Testes,
+Tonsils, Salivary Gland, Pharynx, Diaphragm, Aorta, Hippocampus, Thalamus, Medulla, Cerebrum, Corpus Callosum,
+Spinal Cord, Lymph Node, Sweat Gland, Tear Duct, Eustachian Tube, Fallopian Tube, Epiglottis, Uvula,
+Bile Duct, Ureter, Urethra, Seminal Vesicle, Cochlea, Retina, Cornea, Iris, Pons, Basal Ganglia, `);
+
+/* ───────────── LANGUAGE & SOCIETY ───────────── */
+
+C('language', 'Language & Society', 'Name a language', 'language', `
+English, Spanish, French, Mandarin/Chinese, Hindi, Arabic, Portuguese, Russian, German, Japanese, Italian, Korean,
+Bengali, Urdu, Turkish, Vietnamese, Thai, Dutch, Swedish, Norwegian, Danish, Finnish, Polish, Greek, Hebrew,
+Latin, Swahili, Persian/Farsi, Tamil, Telugu, Punjabi, Cantonese, Indonesian, Malay, Tagalog/Filipino, Czech,
+Hungarian, Romanian, Ukrainian, Icelandic, Irish/Gaelic, Welsh, Scottish Gaelic, Catalan, Basque, Galician,
+Serbian, Croatian, Bulgarian, Slovak, Slovenian, Lithuanian, Latvian, Estonian, Albanian, Armenian, Georgian,
+Maltese, Esperanto, Klingon, Yiddish, Sanskrit, Zulu, Xhosa, Afrikaans, Amharic, Yoruba, Igbo, Hausa, Somali, Hawaiian,
+Maori, Samoan, Tongan, Fijian, Navajo, Quechua, Aymara, Guarani, Nahuatl, Maya, Cherokee, Inuktitut, Sami,
+Faroese, Frisian, Luxembourgish, Romansh, Breton, Cornish, Manx, Occitan, Corsican, Sardinian, Sicilian,
+Ladino, Aramaic, Coptic, Akkadian, Sumerian, Old Norse, Gothic, Tok Pisin, Bislama, Hmong, Khmer, Lao,
+Burmese, Tibetan, Mongolian, Uyghur, Kazakh, Uzbek, Turkmen, Tuvan, Ainu, Tetum, Ewe, Kikuyu, Oromo,
+Tigrinya, Wolof, Fula, Lingala, Shona, Sotho, Tswana, Malagasy, Chamorro, Rapa Nui, Pirahã/Piraha, Ubykh,
+!Xóõ/Taa, Hadza, Sandawe, Dahalo, Silbo Gomero, Toki Pona, Lojban, Volapük/Volapuk
+`);
+
+C('currency', 'Language & Society', 'Name a currency', 'currency', `
+Dollar, Euro, Pound, Yen, Yuan/Renminbi, Rupee, Peso, Franc, Ruble/Rouble, Won, Lira, Real, Rand, Krona,
+Krone, Dinar, Dirham, Riyal/Rial, Baht, Shekel, Zloty, Forint, Koruna, Naira, Shilling, Cedi, Birr, Kwacha,
+Lilangeni, Pa'anga, Tugrik, Ariary, Loti, Quetzal, Gourde, Leone, Kina, Vatu, Dram, Lek, Lev, Manat, Som,
+Kip, Riel, Ngultrum, Pataca, Denar, Leu, Hryvnia, Tenge, Lari, Rufiyaa, Taka, Kyat, Dong, Rupiah, Ringgit,
+Taiwan Dollar/New Taiwan Dollar, Colón/Colon, Córdoba/Cordoba, Lempira, Balboa, Sol, Boliviano, Guaraní/Guarani,
+Bolívar/Bolivar, Pula, Metical, Kwanza, Birr, Nakfa, Ouguiya, Dalasi, Guinean Franc, CFA Franc, Escudo, Mark,
+Drachma, Lira, Punt, Guilder, Schilling, Peseta, Markka, Talent, Denarius, Sestertius, Florin, Ducat, Thaler,
+Bitcoin, Ethereum, Dogecoin, Wampum, Cowrie, Rai Stone/Rai, Sycee, Mohur, Anna, Paisa, Cent, Penny, Nickel, Dime,
+Quarter, Farthing, Groat, Sovereign, Guinea, Crown, Half-crown, Tanner, Bob
+`);
+
+C('color', 'Language & Society', 'Name a colour', 'colour', `
+Red, Blue, Green, Yellow, Orange, Purple, Pink, Black, White, Brown, Gray/Grey, Gold, Silver, Turquoise, Teal,
+Cyan, Magenta, Maroon, Burgundy, Crimson, Scarlet, Indigo, Violet, Lavender, Lilac, Navy, Beige, Cream, Ivory,
+Tan, Peach, Coral, Salmon, Lime, Olive, Mint, Aqua, Fuchsia, Mauve, Plum, Rust, Amber, Bronze, Copper, Khaki,
+Charcoal, Brick, Rose, Chocolate, Coffee, Lemon, Sky Blue, Royal Blue, Forest Green, Emerald, Ruby, Sapphire,
+Azure, Cobalt, Jade, Mustard, Tangerine, Apricot, Raspberry, Wine, Mocha, Chestnut, Mahogany, Caramel, Sand,
+Champagne, Sage, Pistachio, Moss, Midnight Blue, Baby Blue, Powder Blue, Steel Blue, Slate, Pewter, Gunmetal,
+Ash, Bone, Linen, Alabaster, Eggshell, Seashell, Rosewood, Blush, Magnolia, Orchid, Amethyst, Mulberry,
+Aubergine, Saffron, Canary, Pumpkin, Terracotta, Burnt Sienna, Cardinal, Garnet, Aquamarine, Ultramarine,
+Vermilion, Chartreuse, Puce, Ochre/Ocher, Taupe, Cerulean, Viridian, Periwinkle, Sienna, Umber, Sepia, Ecru,
+Cerise, Carmine, Heliotrope, Prussian Blue, Persian Blue, Dove Grey, Buff, Fawn, Tawny, Russet, Auburn,
+Oxblood, Madder, Alizarin, Gamboge, Smalt, Celadon, Glaucous, Fulvous, Bistre, Sinopia, Tuscan Red, Sorrel,
+Liver, Falu Red, Xanadu, Eau de Nil, Isabelline, Zaffre, Feldgrau, Caput Mortuum, Cordovan, Cinereous
+`);
+
+C('fabric', 'Language & Society', 'Name a fabric or textile', 'fabric', `
+Cotton, Silk, Wool, Denim, Linen, Leather, Velvet, Satin, Nylon, Polyester, Cashmere, Fleece, Flannel, Corduroy,
+Lace, Tweed, Chiffon, Tulle, Jersey, Lycra/Spandex, Rayon, Viscose, Suede, Canvas, Terrycloth, Mesh, Organza,
+Taffeta, Gabardine, Seersucker, Poplin, Muslin, Cheesecloth, Lamé/Lame, Brocade, Damask, Jacquard, Moleskin,
+Twill, Batiste, Voile, Dupioni, Charmeuse, Crepe, Georgette, Mohair, Angora, Alpaca, Gingham, Madras, Chintz,
+Calico, Buckram, Sharkskin, Chambray, Oxford, Pique, Terry, Velour, Velveteen, Plush, Faux Fur, Fur, Neoprene,
+Gore-Tex, Kevlar, Acrylic, Acetate, Modal, Tencel/Lyocell, Hemp, Jute, Burlap/Hessian, Ramie, Sisal, Coir,
+Pashmina, Merino, Shetland, Harris Tweed, Loden, Boucle, Chenille, Felt, Baize, Duffel, Melton, Barathea,
+Serge, Worsted, Challis, Lawn, Nainsook, Cambric, Percale, Sateen, Dimity, Marquisette, Ninon, Grosgrain,
+Faille, Ottoman, Bengaline, Shantung, Tussah, Habotai, Pongee, Samite, Sendal, Cendal, Bombazine, Fustian
+`);
+
+C('hat', 'Language & Society', 'Name a type of hat or headwear', 'hat', `
+Baseball Cap, Fedora, Beret, Top Hat, Cowboy Hat, Beanie, Bowler/Derby, Panama, Sombrero, Fez, Trilby, Pork Pie,
+Homburg, Boater, Ushanka, Deerstalker, Tam o'Shanter/Tam, Balmoral, Kepi, Shako, Bicorne, Tricorne, Mitre,
+Zucchetto, Pillbox, Fascinator, Cloche, Bonnet, Balaclava, Newsboy Cap, Flat Cap, Gatsby, Kufi, Taqiyah,
+Yarmulke/Kippah, Turban, Keffiyeh, Tarboosh, Akubra, Pith Helmet, Coonskin Cap, Chullo, Montera, Tyrolean Hat,
+Bucket Hat, Visor, Sun Hat, Straw Hat, Hard Hat, Helmet, Crown, Tiara, Veil, Headscarf, Hijab, Bandana, Snood,
+Hairnet, Shower Cap, Nightcap, Mortarboard, Chef's Hat/Toque, Busby, Bearskin, Glengarry, Capotain,
+Cavalier Hat, Phrygian Cap, Liberty Cap, Conical Hat/Non La, Kasa, Eboshi, Jingasa, Gat, Papakha,
+Karakul, Tubeteika, Topi, Gandhi Cap, Pagri, Dastar, Cossack Hat, Stetson, Ten-gallon Hat, Slouch Hat,
+Bush Hat, Boonie, Trapper Hat, Tilley, Cadet Cap, Garrison Cap, Overseas Cap, Forage Cap, Peaked Cap, Mob Cap,
+Dutch Cap, Coif, Wimple, Hennin, Gable Hood, French Hood, Chaperon, Bycocket, Caul, Calash, Poke Bonnet
+`);
+
+/* ───────────── GAMES & POP ───────────── */
+
+C('board_game', 'Games & Pop', 'Name a board game or card game', 'game', `
+Chess, Monopoly, Scrabble, Poker, Checkers/Draughts, Risk, Clue/Cluedo, Uno, Go, Backgammon, Battleship,
+Connect Four, Jenga, Trivial Pursuit, Sorry, Candy Land, Chutes and Ladders/Snakes and Ladders, Operation,
+Twister, Pictionary, Catan/Settlers of Catan, Ticket to Ride, Carcassonne, Pandemic, Dominion, Azul,
+Mahjong, Dominoes, Bridge, Hearts, Spades, Rummy, Gin Rummy, Blackjack, Solitaire/Patience, Cribbage,
+Canasta, Euchre, Pinochle, Whist, Go Fish, Old Maid, Snap, Crazy Eights, War, Mancala, Hnefatafl, Shogi, Xiangqi,
+Patolli, Senet, Pente, Hive, Agricola, Dixit, Onitama, Tak, Fox and Geese, Othello/Reversi, Stratego, Mastermind,
+Yahtzee, Cranium, Taboo, Codenames, Cards Against Humanity, Exploding Kittens, Munchkin, Magic: The Gathering/Magic, Yu-Gi-Oh!/Yu-Gi-Oh, Pokémon TCG/Pokemon Cards,
+Dungeons & Dragons/D&D, Settlers, Puerto Rico, 7 Wonders, Splendor, Gloomhaven, Terraforming Mars, Wingspan,
+Scythe, Root, Brass, Twilight Struggle, Diplomacy, Axis & Allies, Battle Line, Blokus, Qwirkle, Rummikub, Boggle,
+Perudo/Liar's Dice, Skat, Tarot, Belote, Scopa, Briscola, Truco, Mus, Tute, Ombre, Piquet, Bezique, Klaberjass,
+Durak, Preferans, Sheng Ji, Big Two, Dou Dizhu, Hanafuda, Karuta, `);
+
+C('sport', 'Games & Pop', 'Name a sport', 'sport', `
+Soccer/Football, Basketball, Tennis, Golf, Baseball, American Football, Rugby, Cricket, Hockey, Ice Hockey,
+Volleyball, Swimming, Running/Athletics, Boxing, Wrestling, Cycling, Skiing, Snowboarding, Skateboarding,
+Surfing, Gymnastics, Badminton, Table Tennis/Ping Pong, Archery, Fencing, Rowing, Sailing, Diving, Judo,
+Karate, Taekwondo, Weightlifting, Archery, Handball, Water Polo, Polo, Squash, Lacrosse, Netball, Softball,
+Curling, Bowling, Darts, Snooker, Pool/Billiards, Triathlon, Marathon, Equestrian, Horse Racing, Rodeo,
+Motor Racing/Formula 1, MMA, Sumo, Kendo, Aikido, Capoeira, Parkour, Climbing, Bouldering, Mountaineering,
+Kayaking, Canoeing, Rafting, Fishing, Hunting, Shooting, Biathlon, Luge, Bobsled, Skeleton, Speed Skating,
+Figure Skating, Ski Jumping, Cross-country Skiing, Sepak Takraw, Kabaddi, Hurling, Shinty, Bandy, Jai Alai,
+Pelota, Korfball, Pesäpallo/Pesapallo, Camogie, Bossaball, Ultimate/Ultimate Frisbee, Skijoring, Floorball,
+Underwater Hockey, Gaelic Football, Australian Rules Football/Aussie Rules, Canadian Football, Footvolley,
+Futsal, Beach Volleyball, Pickleball, Padel, Racquetball, Real Tennis, Rackets, Fives, Croquet, Bocce, Petanque,
+Boules, Lawn Bowls, Quoits, Horseshoes, Cornhole, Disc Golf, Footgolf, Kin-Ball, Tchoukball, Roller Derby,
+Quidditch, Cheese Rolling, Bog Snorkelling, Wife Carrying, Toe Wrestling, Gilli-danda, Kho Kho,
+Mallakhamb, Sipa, Arnis, Muay Thai, Silat, Sanda, Wushu, Kurash, Buzkashi, Ulama, Pato, Kokpar, Chowkabhara
+`);
+
+C('pokemon', 'Games & Pop', 'Name a Pokémon', 'Pokémon', `
+Pikachu, Charizard, Mewtwo, Eevee, Bulbasaur, Squirtle, Charmander, Jigglypuff, Snorlax, Gengar, Mew, Lucario,
+Gyarados, Psyduck, Meowth, Togepi, Ditto, Magikarp, Dragonite, Blastoise, Venusaur, Raichu, Vulpix, Ninetales,
+Arcanine, Machamp, Alakazam, Onix, Cubone, Marowak, Lapras, Articuno, Zapdos, Moltres, Mimikyu, Greninja,
+Rayquaza, Lugia, Ho-Oh, Celebi, Umbreon, Espeon, Sylveon, Vaporeon, Jolteon, Flareon, Leafeon, Glaceon,
+Gardevoir, Blaziken, Garchomp, Torchic, Mudkip, Treecko, Piplup, Turtwig, Chimchar, Pidgey, Rattata,
+Caterpie, Weedle, Zubat, Geodude, Slowpoke, Magnemite, Farfetch'd, Doduo, Seel, Grimer, Shellder, Drowzee,
+Krabby, Voltorb, Exeggutor, Hitmonlee, Koffing, Rhyhorn, Chansey, Tangela, Kangaskhan, Horsea, Goldeen,
+Staryu, Mr. Mime, Scyther, Jynx, Electabuzz, Magmar, Pinsir, Tauros, Porygon, Omanyte, Kabuto, Aerodactyl,
+Groudon, Kyogre, Dialga, Palkia, Giratina, Arceus, Reshiram, Zekrom, Kyurem, Xerneas, Yveltal, Solgaleo,
+Lunala, Zacian, Zamazenta, Eternatus, Koraidon, Miraidon, Lycanroc, Incineroar, Decidueye, Primarina,
+Rowlet, Litten, Popplio, Grookey, Scorbunny, Sobble, Sprigatito, Fuecoco, Quaxly, Wooloo, Yamper, Corviknight,
+Dragapult, Toxtricity, Grimmsnarl, Hatterene, Dubwool, Cinderace, Rillaboom, Inteleon, Stunfisk, Wimpod,
+Basculegion, Dudunsparce, Cursola, Falinks, Pincurchin, Probopass, Throh, Sawk, Klefki, Binacle, Barbaracle,
+Bruxish, Oranguru, Passimian, Pyukumuku, Drampa, Cramorant, Eiscue, Indeedee, Morpeko, Dhelmise, Wishiwashi,
+Minior, Komala, Turtonator, Togedemaru, Mareanie, Toxapex, Mudbray, Dewpider, Fomantis, Salandit, Stufful,
+Bounsweet, Bewear, Oricorio, Crabrawler, Cutiefly, Rockruff, Comfey, Sandygast, Palossand, Pyroar, Heatmor,
+Durant, Cottonee, Whimsicott, Foongus, Amoonguss, Alomomola, Tynamo, Klink, Klang, Klinklang, Vanillite,
+Vanillish, Vanilluxe, Deerling, Sawsbuck, Emolga, Karrablast, Escavalier, Shelmet, Accelgor, Frillish,
+Jellicent, Ferroseed, Ferrothorn, Elgyem, Beheeyem, Cubchoo, Beartic, Cryogonal, Axew, Fraxure, Haxorus
+`);
+
+C('video_game', 'Games & Pop', 'Name a video game', 'video game', `
+Minecraft, Fortnite, Super Mario Bros./Super Mario Bros/Super Mario, The Legend of Zelda/Zelda, Tetris, Pac-Man/Pacman,
+Pong, Sonic the Hedgehog/Sonic, Pokémon/Pokemon, Grand Theft Auto/GTA, Call of Duty, Halo, Fallout, Skyrim,
+The Witcher 3/Witcher, Red Dead Redemption, Overwatch, League of Legends, Dota 2/Dota, World of Warcraft/WoW,
+Counter-Strike/CS:GO/CS2, Roblox, Among Us, Animal Crossing, Pikmin, The Sims/Sims, Mario Kart, Super Smash Bros./Smash Bros,
+Donkey Kong, Space Invaders, Asteroids, Street Fighter, Mortal Kombat, Final Fantasy, Kingdom Hearts, Metroid,
+Mega Man, Castlevania, Contra, Metal Gear Solid, Resident Evil, Silent Hill, Doom, Quake, Half-Life, Portal,
+BioShock, Mass Effect, Dragon Age, Dark Souls, Elden Ring, Bloodborne, Sekiro, Hollow Knight, Celeste, Hades,
+Stardew Valley, Terraria, Undertale, Cuphead, Shovel Knight, Braid, Fez, Journey, Limbo, Inside, Portal 2,
+Katamari Damacy, Shadow of the Colossus, Ico, Okami, Earthbound, Chrono Trigger, Secret of Mana, Paper Mario,
+Dwarf Fortress, NetHack, Rogue, Zork, Myst, Loom, Monkey Island, Day of the Tentacle, Grim Fandango,
+Jet Set Radio, Rez, Panzer Dragoon, Killer7, Shenmue, Cave Story, Spelunky, Disco Elysium, Papers Please,
+Baba Is You, Return of the Obra Dinn, Outer Wilds, Noita, Dead Cells, Slay the Spire, Balatro,
+Vampire Survivors, Hades II, Caves of Qud, Kerbal Space Program, Factorio, Oxygen Not Included, RimWorld,
+Crusader Kings, Civilization, StarCraft, Warcraft, Age of Empires, Command & Conquer, Total Annihilation,
+SimCity, RollerCoaster Tycoon, Theme Hospital, Populous, Black & White, Seaman, Boktai, Sword of the Stars
+`);
+
+C('language_code', 'Games & Pop', 'Name a programming language', 'programming language', `
+Python, JavaScript, Java, C++, C, C#, Ruby, PHP, Go/Golang, Rust, Swift, Kotlin, TypeScript, Perl, Lua, R, MATLAB,
+SQL, HTML, CSS, Bash/Shell, PowerShell, Scala, Haskell, Elixir, Erlang, Clojure, Lisp, Scheme, Racket, OCaml,
+F#, Dart, Objective-C, Visual Basic/VB, Basic, Pascal, Delphi, Fortran, COBOL, Assembly, Ada, Prolog, Smalltalk,
+Julia, Groovy, Zig, Nim, Crystal, D, Eiffel, Forth, APL, J, Brainfuck, Malbolge, Befunge, Whitespace, Idris, Coq,
+Agda, Pony, Hack, Io, Self, Icon, SNOBOL, ALGOL, Simula, Logo, Scratch, LabVIEW, VHDL, Verilog, Solidity,
+Move, Cairo, Vyper, Elm, PureScript, ReasonML/Reason, ReScript, CoffeeScript, Dylan, Mercury, Oz, Occam, Joy,
+Factor, Raku/Perl 6, Awk, Sed, Tcl, Rexx, PL/I, Modula-2, Oberon, BCPL, B, Jovial, Lingo, ActionScript,
+Mathematica/Wolfram Language, Maple, Stata, SAS, Apex, ABAP, RPG, Hy, Janet, Fennel, Gleam, Roc,
+Unison, Odin, Jai, Vala, Genie, Chapel, X10, Fortress, Cobra, Boo, Ceylon, Fantom, Pike, Squirrel, Wren,
+Whiley, Rebol, Red, Ring, Ballerina, Bosque, Carbon, Mojo, Val, Vlang/V, Zim
+`, { strip: ['language'] });
+
+/* ───────────── THINGS & MYTHS ───────────── */
+
+C('tool', 'Things & Tools', 'Name a hand tool', 'tool', `
+Hammer, Screwdriver, Saw, Wrench/Spanner, Drill, Pliers, Chisel, Axe, Shovel, Hoe, Rake, Pickaxe, Crowbar,
+Tape Measure, Level/Spirit Level, Wrench, Sander, Plane, File, Rasp, Hacksaw, Jigsaw, Handsaw, Bolt Cutters, Cold Chisel, Punch, Center Punch, Nail Set, Rivet Gun, Hand Riveter, Gouge,
+Wire Cutters, Utility Knife/Stanley Knife, Scissors, Shears, Pruners/Secateurs, Trowel, Spade, Sledgehammer, Mallet,
+Maul, Mattock, Adze, Awl, Spokeshave, Froe, Drawknife, Plumb Bob, Scribe, Bevel Gauge, Mortise Gauge, Brace,
+Bradawl, Rabbet Plane, Gimlet, Fid, Anvil, Tongs, Bellows, Vise/Vice, Clamp, Grinder, Whetstone/Sharpening Stone,
+Hand Drill, Auger, Bit and Brace, Ratchet, Socket Wrench, Allen Key/Hex Key, Torque Wrench, Pipe Wrench,
+Monkey Wrench, Stud Finder, Caulking Gun, Staple Gun, Nail Gun, Glue Gun, Soldering Iron, Multimeter,
+Crimper, Wire Stripper, Tin Snips, Chalk Line, Square/Try Square, Combination Square, Marking Gauge, Dividers,
+Calipers, Micrometer, Feeler Gauge, Dowel Jig, Biscuit Joiner, Router, Lathe, Bandsaw, Scroll Saw, Coping Saw,
+Fretsaw, Dovetail Saw, Tenon Saw, Bow Saw, Pruning Saw, Machete, Billhook, Scythe, Sickle, Pitchfork, Beetle, Slick, Skew Chisel
+`);
+
+C('boat', 'Things & Tools', 'Name a type of boat or ship', 'boat or ship', `
+Sailboat, Yacht, Canoe, Kayak, Rowboat, Motorboat, Speedboat, Ferry, Cruise Ship, Submarine, Tugboat, Barge,
+Lifeboat, Dinghy, Catamaran, Trimaran, Gondola, Raft, Paddleboat, Steamboat, Tanker, Freighter, Container Ship,
+Battleship, Destroyer, Aircraft Carrier, Frigate, Cruiser, Galleon, Schooner, Clipper, Brigantine, Carrack, Caravel,
+Longship/Viking Ship, Trireme, Galley, Junk, Sampan, Dhow, Felucca, Outrigger, Pirogue, Coracle, Umiak, Hovercraft,
+Hydrofoil, Jet Ski, Pontoon Boat, Houseboat, Trawler, Tall Ship, Windjammer, Packet, Collier, Reefer, Bulk Carrier, Supertanker, LNG Carrier, Ro-Ro, Car Ferry, Whaler, Icebreaker, Ketch, Sloop, Cutter, Yawl, Brig,
+Barque, Fluyt, Man-of-war/Man o' War, Ship of the Line, Corvette, Gunboat, Dreadnought, Monitor, Ironclad,
+Paddle Steamer, Sternwheeler, Riverboat, Keelboat, Flatboat, Pinnace, Skiff, Punt, Wherry, Narrowboat,
+Jolly Boat, Gig, Whaleboat, Dory, Peapod, Lugger, Smack, Cog, Hulk, Knarr, Drakkar, Bireme, Quinquereme, Dromon,
+Xebec, Felucca Boat, Tartane, Polacre, Galleass, Bucentaur, Caique, Kayik, Boutre, Baghlah, Sambuk, Jalibut,
+`);
+
+C('car_brand', 'Things & Tools', 'Name a car brand', 'car brand', `
+Toyota, Ford, BMW, Honda, Mercedes-Benz/Mercedes, Volkswagen/VW, Audi, Chevrolet/Chevy, Nissan, Tesla, Porsche,
+Ferrari, Lamborghini, Jaguar, Land Rover, Volvo, Mazda, Subaru, Hyundai, Kia, Fiat, Peugeot, Renault, Citroën/Citroen,
+Mini, Bentley, Rolls-Royce, Aston Martin, Bugatti, McLaren, Maserati, Alfa Romeo, Lexus, Acura, Infiniti,
+Jeep, Dodge, Chrysler, Cadillac, Buick, Lincoln, GMC, Ram, Suzuki, Mitsubishi, Skoda/Škoda, SEAT, Opel, Vauxhall,
+Saab, Lotus, Morgan, Caterham, Ariel, Noble, Koenigsegg, Pagani, Spyker, Saleen, Alpina, Wiesmann, Zenvo, Rimac,
+Donkervoort, Dacia, Lada, Proton, Perodua, Tata, Mahindra, Geely, BYD, Chery, Great Wall, NIO, Xpeng, Polestar,
+Lucid, Rivian, Fisker, DeLorean, Tucker, Studebaker, Packard, Hudson, Nash, Oldsmobile, Pontiac, Plymouth,
+Mercury, Saturn, Hummer, Scion, Daewoo, SsangYong, Holden, Tatra, Trabant, Wartburg, Moskvich, ZIL, Gaz, UAZ,
+Maybach, Abarth, Lancia, Pininfarina, Bristol, TVR, Reliant, Jensen, Sunbeam, Triumph, Austin, Morris, Rover,
+MG, Hillman, Humber, Singer, Riley, Wolseley, Vanden Plas, Daimler, Lagonda, Frazer Nash, HRG, Lister, Marcos
+`);
+
+C('god', 'Things & Tools', 'Name a Greek or Roman god, goddess or titan', 'god', `
+Zeus, Poseidon, Hades, Athena, Apollo, Aphrodite, Ares, Hermes, Hera, Dionysus, Artemis, Hephaestus, Demeter,
+Persephone, Jupiter, Mars, Venus, Neptune, Mercury, Minerva, Juno, Pluto, Saturn, Cronus/Kronos,
+Eros/Cupid, Pan, Nike, Hecate, Nemesis, Tyche, Morpheus, Hypnos, Thanatos, Eos, Helios, Selene, Eris, Hebe,
+Nyx, Erebus, Aeolus, Janus, Vesta, Bacchus, Terminus, Pomona, Flora, Fortuna, Aurora, Bellona, Faunus, Priapus,
+Aristaeus, Triton, Iris, Harmonia, Hygieia, Asclepius, Plutus, Momus, Kratos, Rhea, Gaia/Gaea, Uranus, Oceanus,
+Tethys, Hyperion, Theia, Coeus, Phoebe, Crius, Iapetus, Themis, Mnemosyne, Atlas, Prometheus, Epimetheus,
+Menoetius, Metis, Leto, Dione, Maia, Semele, Amphitrite, Nereus, Thetis, Proteus, Galatea,
+Glaucus, Pontus, Thaumas, Phorcys, Ceto, Eurybia, Tartarus, Chaos, Aether, Hemera, Ananke, Chronos, Phanes,
+Erinyes/Furies, Moirai/Fates, Charites/Graces, Horae, Muses, Calliope, Clio, Erato, Euterpe, Melpomene, Polyhymnia,
+Terpsichore, Thalia, Urania, Lares, Penates, Ops, Consus, Libitina, Sol, Luna, Tellus, Mater Matuta, Carmenta,
+Egeria, Feronia, Ceres, Liber, Libera, Quirinus, Picus, Silvanus, Vertumnus, Laverna, Volturnus, Juturna
+`);
+
+C('mythical', 'Things & Tools', 'Name a mythical creature', 'mythical creature', `
+Dragon, Unicorn, Phoenix, Mermaid, Griffin/Gryphon, Centaur, Basilisk, Chimera, Hydra, Kraken, Minotaur, Cerberus,
+Pegasus, Sphinx, Banshee, Kitsune, Tengu, Kappa, Yeti, Wendigo, Chupacabra, Selkie, Kelpie, Draugr, Golem, Djinn/Genie,
+Roc, Simurgh, Manticore, Cockatrice, Wyvern, Bunyip, Mokele-mbembe, Jackalope, Tanuki, Baku, Qilin, Nue,
+Jörmungandr/Jormungandr, Fenrir, Sleipnir, Ammit, Bakunawa, Tikbalang, Aswang, Manananggal, Naga, Garuda,
+Makara, Vetala, Ahuizotl, Leviathan, Behemoth, Werewolf, Vampire, Zombie, Ghoul, Ghost, Troll, Ogre, Goblin,
+Orc, Elf, Dwarf, Gnome, Fairy, Pixie, Sprite, Leprechaun, Brownie, Kobold, Imp, Succubus, Incubus, Harpy, Siren,
+Gorgon, Medusa, Lamia, Empusa, Satyr, Faun, Nymph, Dryad, Naiad, Nereid, Triton, Scylla, Charybdis, Typhon,
+Echidna, Orthrus, Ladon, Python, Hippogriff, Hippocamp, Ichthyocentaur, Onocentaur, Capricorn,
+Catoblepas, Bonnacon, Yale, Amphisbaena, Ouroboros, Salamander, Sylph, Undine, Will-o'-the-wisp,
+Nekomata, Bakeneko, Oni, Yokai, Yurei, Jorogumo, Rokurokubi, Kodama, Tsukumogami, Nurikabe, Hitodama,
+Kijimuna, Mizuchi, Orochi, Yamata no Orochi, Raijū/Raiju, Kirin, Hōō/Ho-o, Fenghuang, Pixiu, Taotie, Hundun, Qiongqi
+`);
+
+/* ───────────── ENGINE (pure logic, no DOM) ───────────── */
+
+var CHAR_MAP = { 'ø': 'o', 'æ': 'ae', 'œ': 'oe', 'ß': 'ss', 'đ': 'd', 'ł': 'l', 'ı': 'i', 'þ': 'th', 'ð': 'd' };
+
+function norm(s) {
+  s = String(s).toLowerCase();
+  s = s.replace(/[øæœßđłıþð]/g, function (c) { return CHAR_MAP[c]; });
+  s = s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+  s = s.replace(/&/g, ' and ').replace(/#/g, ' sharp ').replace(/\+/g, ' plus ').replace(/['’`ʻʼ]/g, '');
+  s = s.replace(/[^a-z0-9]+/g, ' ').trim();
+  s = s.replace(/\bst\b/g, 'saint').replace(/\bmt\b/g, 'mount');
+  return s.replace(/\s+/g, ' ');
+}
+function words(s) {
+  var w = norm(s).split(' ').filter(Boolean);
+  if (w.length > 1 && /^(the|a|an)$/.test(w[0])) w.shift();
+  return w;
+}
+function keyOf(s) { return words(s).join(''); }
+function stripKey(s, strip) {
+  if (!strip) return keyOf(s);
+  var w = words(s).filter(function (x) { return strip.indexOf(x) < 0; });
+  return w.length ? w.join('') : keyOf(s);
+}
+function trim(s) { return s.replace(/^\s+|\s+$/g, ''); }
+
+/* Parse one category's raw string into ranked items + a lookup index. */
+function parseCat(c) {
+  if (c._ready) return c;
+  c.list = [];
+  c.index = Object.create(null);
+  c.dupes = [];
+  c.collisions = [];
+  c.items.split(',').map(trim).filter(Boolean).forEach(function (tok) {
+    var parts = tok.split('/').map(trim).filter(Boolean);
+    var name = parts[0];
+    var pk = keyOf(name);
+    if (!pk) return;
+    if (c.index[pk]) { c.dupes.push(name); return; }
+    var item = { name: name, rank: c.list.length, sort: stripKey(name, c.strip), keys: [] };
+    c.list.push(item);
+    parts.forEach(function (form) {
+      [keyOf(form), stripKey(form, c.strip)].forEach(function (k) {
+        if (!k) return;
+        if (!c.index[k]) { c.index[k] = item; item.keys.push(k); }
+        else if (c.index[k] !== item) c.collisions.push(form + ' ↔ ' + c.index[k].name);
+      });
+    });
+  });
+  c._ready = true;
+  return c;
+}
+
+/* ── Prompt variants: this is what makes the dig endless. ── */
+var ALPHA = 'abcdefghijklmnopqrstuvwxyz';
+
+function passes(item, v) {
+  var s = item.sort;
+  switch (v.t) {
+    case 'plain': return true;
+    case 'starts': return s.charAt(0) === v.v;
+    case 'ends': return s.charAt(s.length - 1) === v.v;
+    case 'has': return s.indexOf(v.v) >= 0;
+    case 'short': return s.length <= 5;
+    case 'long': return s.length >= 10;
+  }
+  return false;
+}
+
+function variantsOf(c) {
+  if (c._variants) return c._variants;
+  parseCat(c);
+  var n = c.list.length;
+  var out = [{ t: 'plain', size: n }];
+  function count(v) { var k = 0; for (var i = 0; i < n; i++) if (passes(c.list[i], v)) k++; return k; }
+  for (var i = 0; i < ALPHA.length; i++) {
+    var ch = ALPHA.charAt(i), v, k;
+    v = { t: 'starts', v: ch }; k = count(v); if (k >= 6 && k <= n * 0.5) { v.size = k; out.push(v); }
+    v = { t: 'ends', v: ch }; k = count(v); if (k >= 8 && k <= n * 0.4) { v.size = k; out.push(v); }
+    v = { t: 'has', v: ch }; k = count(v); if (k >= 8 && k <= n * 0.35) { v.size = k; out.push(v); }
+  }
+  var sv = { t: 'short' }; var k1 = count(sv); if (k1 >= 6 && k1 <= n * 0.45) { sv.size = k1; out.push(sv); }
+  var lv = { t: 'long' }; var k2 = count(lv); if (k2 >= 6 && k2 <= n * 0.5) { lv.size = k2; out.push(lv); }
+  c._variants = out;
+  return out;
+}
+
+var TIERS = [
+  { id: 'pebble', name: 'Pebble', blurb: 'Everybody digs here.' },
+  { id: 'copper', name: 'Copper', blurb: 'Common ground.' },
+  { id: 'silver', name: 'Silver', blurb: 'Solid, if familiar.' },
+  { id: 'gold', name: 'Gold', blurb: 'Now you are prospecting.' },
+  { id: 'amethyst', name: 'Amethyst', blurb: 'Few would think of that.' },
+  { id: 'ruby', name: 'Ruby', blurb: 'A deep cut.' },
+  { id: 'diamond', name: 'Diamond', blurb: 'Truly obscure.' },
+  { id: 'heartstone', name: 'Heartstone', blurb: 'One in a mollion.' }
+];
+var TIER_CUTS = [0.12, 0.28, 0.45, 0.62, 0.78, 0.90];
+function tierOf(r) { for (var i = 0; i < TIER_CUTS.length; i++) if (r < TIER_CUTS[i]) return i; return 6; }
+var HEART = 7;
+var STREAK_TIER = 3; // Gold or better extends the vein streak
+
+/* Build a live prompt: the subset of answers, plus a rarity score for each. */
+function buildPrompt(c, v) {
+  parseCat(c);
+  var all = c.list, N = all.length;
+  var subset = all.filter(function (it) { return passes(it, v); });
+  var m = subset.length, raw = [], r = [], tier = [], pos = Object.create(null);
+  for (var i = 0; i < m; i++) {
+    var g = N > 1 ? subset[i].rank / (N - 1) : 0;
+    var s = m > 1 ? i / (m - 1) : 0;
+    raw.push(0.5 * g + 0.5 * s);
+    pos[subset[i].rank] = i;
+  }
+  var lo = raw[0], hi = raw[m - 1], span = (hi - lo) || 1;
+  var hearts = Math.max(1, Math.round(m * 0.015));
+  for (var j = 0; j < m; j++) {
+    var rr = (raw[j] - lo) / span;
+    r.push(rr);
+    tier.push(j >= m - hearts ? HEART : tierOf(rr));
+  }
+  return { cat: c, v: v, subset: subset, r: r, tier: tier, pos: pos, hearts: hearts, size: m };
+}
+
+/* Which words to show for the prompt. */
+function promptParts(p) {
+  var c = p.cat, v = p.v, mod = null;
+  var who = c.p ? 'last name' : 'name';
+  var L = (v.v || '').toUpperCase();
+  if (v.t === 'starts') mod = { label: c.p ? 'last name starts with' : 'starts with', val: L };
+  else if (v.t === 'ends') mod = { label: c.p ? 'last name ends with' : 'ends with', val: L };
+  else if (v.t === 'has') mod = { label: who + ' contains', val: L };
+  else if (v.t === 'short') mod = { label: who + ' is', val: '5 letters or fewer' };
+  else if (v.t === 'long') mod = { label: who + ' is', val: '10 letters or more' };
+  return { q: c.q, noun: c.n, mod: mod };
+}
+
+function gainFor(p, idx, streakBefore, lantern) {
+  var r = p.r[idx], t = p.tier[idx];
+  var base = Math.round(4 + 396 * r * r);
+  var mult = 1 + 0.1 * Math.min(streakBefore, 5);
+  var pen = lantern ? 0.8 : 1;
+  var main = Math.round(base * mult * pen);
+  var bonus = t === HEART ? 150 : 0;
+  return { base: base, mult: mult, pen: pen, bonus: bonus, total: main + bonus };
+}
+
+/* ── Matching: exact keys, plural forms, then guarded fuzzy ── */
+function dist(a, b, max) {
+  var la = a.length, lb = b.length;
+  if (Math.abs(la - lb) > max) return max + 1;
+  var prev2 = null, prev = [], cur = [], i, j;
+  for (j = 0; j <= lb; j++) prev[j] = j;
+  for (i = 1; i <= la; i++) {
+    cur = [i];
+    var rowMin = i;
+    for (j = 1; j <= lb; j++) {
+      var cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+      var v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+      if (i > 1 && j > 1 && a.charAt(i - 1) === b.charAt(j - 2) && a.charAt(i - 2) === b.charAt(j - 1)) v = Math.min(v, prev2[j - 2] + 1);
+      cur[j] = v;
+      if (v < rowMin) rowMin = v;
+    }
+    if (rowMin > max) return max + 1;
+    prev2 = prev; prev = cur;
+  }
+  return prev[lb];
+}
+
+function resolve(p, text) {
+  var c = p.cat, t = String(text || '');
+  var k = keyOf(t);
+  if (!k) return { s: 'empty' };
+  var sk = stripKey(t, c.strip);
+  var cands = [k];
+  if (sk !== k) cands.push(sk);
+  [k, sk].forEach(function (x) {
+    if (x.length > 3 && x.slice(-1) === 's') cands.push(x.slice(0, -1));
+    if (x.length > 4 && x.slice(-2) === 'es') cands.push(x.slice(0, -2));
+    if (x.length > 4 && x.slice(-3) === 'ies') cands.push(x.slice(0, -3) + 'y');
+  });
+  for (var i = 0; i < cands.length; i++) {
+    var item = c.index[cands[i]];
+    if (item) return p.pos[item.rank] !== undefined ? { s: 'ok', item: item, idx: p.pos[item.rank] } : { s: 'filter', item: item };
+  }
+  var L = k.length;
+  var max = L <= 4 ? 0 : L <= 8 ? 1 : 2;
+  if (max === 0) return { s: 'none' };
+  var best = null, bd = 99, ties = 0;
+  for (var key in c.index) {
+    var it = c.index[key];
+    if (p.pos[it.rank] === undefined) continue;
+    var d = dist(k, key, max);
+    if (d > max) continue;
+    if (d < bd) { bd = d; best = it; ties = 0; }
+    else if (d === bd && it !== best) ties++;
+  }
+  if (!best) return { s: 'none' };
+  var out = { item: best, idx: p.pos[best.rank], d: bd };
+  if (bd === 1 && L >= 7 && ties === 0) { out.s = 'ok'; out.read = best.name; return out; }
+  out.s = 'confirm';
+  return out;
+}
+
+/* One hint: a rare, non-gem answer's first letter and length. */
+function lanternHint(p) {
+  var pool = [];
+  for (var i = 0; i < p.size; i++) if (p.tier[i] >= 4 && p.tier[i] < HEART) pool.push(i);
+  if (!pool.length) for (var j = 0; j < p.size; j++) if (p.tier[j] >= 3 && p.tier[j] < HEART) pool.push(j);
+  if (!pool.length) return null;
+  var it = p.subset[pool[Math.floor(Math.random() * pool.length)]];
+  return { first: it.sort.charAt(0).toUpperCase(), len: it.sort.length };
+}
+
+/* ── Strata ── */
+var STRATA = [
+  { name: 'Topsoil', at: 0, a: '#4a3322', b: '#6d4a30', c: '#8a6240', kind: 'roots', glow: '#ffb938' },
+  { name: 'Clay', at: 100, a: '#7a3f2a', b: '#a1583a', c: '#c27a55', kind: 'pebbles', glow: '#ffb938' },
+  { name: 'Gravel Bed', at: 250, a: '#5f5b55', b: '#857f76', c: '#b3aca0', kind: 'pebbles', glow: '#ffd27a' },
+  { name: 'Sandstone', at: 500, a: '#a07a48', b: '#c49c64', c: '#e2c490', kind: 'fossils', glow: '#ffd27a' },
+  { name: 'Limestone', at: 850, a: '#9c9888', b: '#c4bfac', c: '#e6e1cf', kind: 'fossils', glow: '#fff0c4' },
+  { name: 'Granite', at: 1300, a: '#6c5b5e', b: '#968385', c: '#c7b3b0', kind: 'pebbles', glow: '#ffe2b0' },
+  { name: 'Quartz Veins', at: 1900, a: '#454b6d', b: '#6c749e', c: '#dfe6ff', kind: 'crystals', glow: '#d6e0ff' },
+  { name: 'Basalt', at: 2700, a: '#232833', b: '#3a4150', c: '#6a7488', kind: 'pebbles', glow: '#ffcf8a' },
+  { name: 'Obsidian', at: 3700, a: '#120f1c', b: '#2a2145', c: '#8f6fe0', kind: 'crystals', glow: '#c9b0ff' },
+  { name: 'Magma', at: 5000, a: '#4a140b', b: '#842211', c: '#ff7a1f', kind: 'lava', glow: '#ff9a4a' },
+  { name: 'Mantle', at: 6700, a: '#6a1c0b', b: '#a8330f', c: '#ffa23a', kind: 'lava', glow: '#ffb86a' },
+  { name: 'Outer Core', at: 8800, a: '#8f2c0c', b: '#d2561a', c: '#ffd25a', kind: 'lava', glow: '#ffe08a' },
+  { name: 'Inner Core', at: 11300, a: '#d98a22', b: '#f5c24a', c: '#fff4c2', kind: 'lava', glow: '#fff4c2' },
+  { name: 'The Hollow', at: 14300, a: '#07161f', b: '#0d2c3a', c: '#4fe3d0', kind: 'mushrooms', glow: '#7ff5e4' },
+  { name: 'Far Side', at: 18000, a: '#05050f', b: '#0b0b24', c: '#cfd8ff', kind: 'stars', glow: '#cfd8ff' }
+];
+function stratumIndex(d) {
+  var i = 0;
+  while (i + 1 < STRATA.length && d >= STRATA[i + 1].at) i++;
+  return i;
+}
+
+/* ───────────── UI: storage, sound, dig scene, game flow ───────────── */
+
+function $(id) { return document.getElementById(id); }
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function mulberry(seed) { var a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { }
+
+/* ── persistence (per-viewer convenience; the game works without it) ── */
+var KEY = 'mollion.v1';
+var store = {
+  d: null,
+  fresh: function () {
+    return {
+      run: { depth: 0, streak: 0, answered: 0, shiftNo: 1, shiftFinds: [], shiftLog: [], shiftStart: 0, trophies: [], promptNo: 0 },
+      stats: { best: 0, total: 0, answers: 0, hearts: 0, byTier: [0, 0, 0, 0, 0, 0, 0, 0], bestStreak: 0, deepestStratum: 0, shifts: 0, runs: 1 },
+      rare: [], sound: true
+    };
+  },
+  load: function () {
+    var base = this.fresh(), got = null;
+    try { var raw = localStorage.getItem(KEY); if (raw) got = JSON.parse(raw); } catch (e) { got = null; }
+    if (got && typeof got === 'object') {
+      ['run', 'stats'].forEach(function (k) { if (got[k] && typeof got[k] === 'object') for (var f in got[k]) base[k][f] = got[k][f]; });
+      if (Array.isArray(got.rare)) base.rare = got.rare.slice(0, 40);
+      if (typeof got.sound === 'boolean') base.sound = got.sound;
+    }
+    var r = base.run;
+    if (typeof r.depth !== 'number' || !isFinite(r.depth) || r.depth < 0) r.depth = 0;
+    if (!Array.isArray(r.shiftFinds)) r.shiftFinds = [];
+    if (!Array.isArray(r.trophies)) r.trophies = [];
+    if (!Array.isArray(r.shiftLog)) r.shiftLog = [];
+    this.d = base;
+  },
+  save: function () { try { localStorage.setItem(KEY, JSON.stringify(this.d)); } catch (e) { } }
+};
+
+/* ── sound (WebAudio, started from a user gesture) ── */
+var Snd = (function () {
+  var ctx = null, master = null, noiseBuf = null, on = true;
+  function ensure() {
+    if (ctx) return ctx;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC(); master = ctx.createGain(); master.gain.value = 0.55; master.connect(ctx.destination);
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+      var d = noiseBuf.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    } catch (e) { ctx = null; }
+    return ctx;
+  }
+  function ready() { if (!on) return null; var c = ensure(); if (!c) return null; if (c.state === 'suspended') { try { c.resume(); } catch (e) { } } return c; }
+  function tone(f, t0, dur, type, vol, slideTo) {
+    var c = ctx, o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'triangle'; o.frequency.setValueAtTime(f, t0);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function noise(t0, dur, f, q, vol) {
+    var c = ctx, s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = noiseBuf; fl.type = 'bandpass'; fl.frequency.value = f; fl.Q.value = q;
+    g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    s.connect(fl); fl.connect(g); g.connect(master); s.start(t0, Math.random() * 0.5); s.stop(t0 + dur + 0.02);
+  }
+  var SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21];
+  return {
+    setOn: function (v) { on = v; },
+    unlock: function () { ready(); },
+    thud: function (v) { var c = ready(); if (!c) return; var t = c.currentTime; noise(t, 0.11, 160 + Math.random() * 140, 1.2, 0.5 * (v || 1)); tone(70 + Math.random() * 20, t, 0.12, 'sine', 0.35 * (v || 1), 40); },
+    chime: function (tier) {
+      var c = ready(); if (!c) return; var t = c.currentTime;
+      if (tier === 0) { tone(196, t, 0.25, 'triangle', 0.22); return; }
+      var n = Math.min(tier + 1, 8), base = 261.63 * (tier >= 4 ? 1.25 : 1);
+      for (var i = 0; i < n; i++) tone(base * Math.pow(2, SCALE[i] / 12), t + i * 0.075, 0.5, 'triangle', 0.17);
+      if (tier === 7) { for (var j = 0; j < 7; j++) tone(1046.5 * Math.pow(2, SCALE[j % 6] / 12), t + 0.5 + j * 0.06, 0.7, 'sine', 0.1); }
+    },
+    strata: function () { var c = ready(); if (!c) return; var t = c.currentTime; tone(150, t, 0.9, 'sine', 0.3, 55); tone(220, t + 0.1, 0.8, 'triangle', 0.12, 110); },
+    nope: function () { var c = ready(); if (!c) return; var t = c.currentTime; tone(170, t, 0.12, 'square', 0.09, 120); tone(130, t + 0.1, 0.16, 'square', 0.08, 90); },
+    blip: function () { var c = ready(); if (!c) return; tone(520, c.currentTime, 0.07, 'triangle', 0.1); }
+  };
+})();
+
+/* ── gems as inline SVG ── */
+var gemUid = 0;
+function gemSVG(tier, cls) {
+  var c = 'var(--f' + tier + ')', s = '';
+  var head = '<svg class="gem ' + (cls || '') + '" viewBox="0 0 64 64" style="--c:' + c + '" aria-hidden="true">';
+  if (tier <= 3) {
+    s += '<path d="M9 40C5 27 14 13 28 11c12-4 28 4 26 21 4 12-10 24-24 22-10 4-19-2-21-14z" fill="' + c + '"/>';
+    s += '<path d="M15 37c-2-10 4-18 14-21-4 8-8 14-14 21z" fill="#fff" opacity=".3"/>';
+    s += '<path d="M33 52c11-2 19-10 19-20-1 12-8 19-19 20z" fill="#000" opacity=".28"/>';
+    if (tier >= 2) s += '<path d="M44 14l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#fff" opacity=".85"/>';
+    if (tier === 3) s += '<circle cx="22" cy="42" r="2" fill="#fff" opacity=".7"/>';
+  } else if (tier === 4) {
+    s += '<polygon points="32,5 51,17 51,44 32,59 13,44 13,17" fill="' + c + '"/>';
+    s += '<polygon points="32,5 51,17 32,26 13,17" fill="#fff" opacity=".35"/>';
+    s += '<polygon points="13,17 32,26 32,59 13,44" fill="#000" opacity=".12"/>';
+    s += '<polygon points="51,17 51,44 32,59 32,26" fill="#000" opacity=".28"/>';
+  } else if (tier === 5) {
+    s += '<path d="M14 14h36l6 14-24 30L8 28z" fill="' + c + '"/>';
+    s += '<path d="M14 14h36l-8 12H22z" fill="#fff" opacity=".35"/>';
+    s += '<path d="M8 28h14l10 30z" fill="#000" opacity=".14"/>';
+    s += '<path d="M56 28H42L32 58z" fill="#000" opacity=".28"/>';
+    s += '<path d="M22 26h20L32 58z" fill="#fff" opacity=".12"/>';
+  } else if (tier === 6) {
+    s += '<polygon points="11,24 21,9 43,9 53,24 32,57" fill="' + c + '"/>';
+    s += '<polygon points="11,24 53,24 32,57" fill="#000" opacity=".16"/>';
+    s += '<polygon points="21,9 32,24 11,24" fill="#fff" opacity=".4"/>';
+    s += '<polygon points="43,9 32,24 53,24" fill="#fff" opacity=".18"/>';
+    s += '<polygon points="21,9 43,9 32,24" fill="#fff" opacity=".3"/>';
+    s += '<path d="M46 6l1.6 4.4L52 12l-4.4 1.6L46 18l-1.6-4.4L40 12l4.4-1.6z" fill="#fff"/>';
+  } else {
+    s += '<path d="M32 57C10 42 5 28 9 19 13 10 26 10 32 21 38 10 51 10 55 19c4 9-1 23-23 38z" fill="' + c + '"/>';
+    s += '<path d="M14 15c5-4 13-2 18 6-6-1-12 0-18-6z" fill="#fff" opacity=".4"/>';
+    s += '<path d="M32 21c5-8 13-10 18-6-6 6-12 7-18 6z" fill="#fff" opacity=".2"/>';
+    s += '<path d="M9 19l23 2 23-2-4 14-19 24-19-24z" fill="#000" opacity=".12"/>';
+    s += '<path d="M32 21L20 31l12 26 12-26z" fill="#000" opacity=".16"/>';
+    s += '<path d="M50 5l1.6 4.4L56 11l-4.4 1.6L50 17l-1.6-4.4L44 11l4.4-1.6z" fill="#fff"/>';
+  }
+  return head + s + '</svg>';
+}
+
+/* ───────────── The dig scene ───────────── */
+var Stage = (function () {
+  var cv, ctx, wrap, W = 300, H = 300, DPR = 1, S = 1, feetY = 150, cx = 150, tw = 46;
+  var cam = 0, anim = null, digging = false, clock = 0, lastT = 0, thudT = 0;
+  var particles = [], motes = [], chunks = {}, CH = 160, lastIdx = 0, lastNum = -1;
+  var hudNum, hudName, hudIdx, banner, bn, bd;
+  var api = { onStratum: null, getTrophies: function () { return []; } };
+
+  function resize() {
+    var r = wrap.getBoundingClientRect();
+    W = Math.max(120, Math.round(r.width)); H = Math.max(120, Math.round(r.height));
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    S = clamp(H / 330, 0.62, 1.5);
+    feetY = Math.round(H * 0.56); cx = Math.round(W / 2 + 21); tw = 46 * S;
+  }
+  function yOf(d) { return feetY + (d - cam) * S; }
+
+  function chunk(k) {
+    var c = chunks[k];
+    if (c) return c;
+    var rnd = mulberry(k * 7919 + 17), a = [];
+    for (var i = 0; i < 34; i++) a.push({ x: rnd(), y: rnd() * CH, s: rnd(), t: rnd(), u: rnd() });
+    chunks[k] = a;
+    var keys = Object.keys(chunks);
+    if (keys.length > 40) { keys.sort(function (p, q) { return Math.abs(p - k) - Math.abs(q - k); }); for (var j = 30; j < keys.length; j++) delete chunks[keys[j]]; }
+    return a;
+  }
+
+  function mix(h1, h2, t) {
+    var a = parseInt(h1.slice(1), 16), b = parseInt(h2.slice(1), 16);
+    var r = Math.round((a >> 16) * (1 - t) + (b >> 16) * t), g = Math.round(((a >> 8) & 255) * (1 - t) + ((b >> 8) & 255) * t), bl = Math.round((a & 255) * (1 - t) + (b & 255) * t);
+    return 'rgb(' + r + ',' + g + ',' + bl + ')';
+  }
+
+  function drawSky(surfaceY) {
+    var g = ctx.createLinearGradient(0, 0, 0, surfaceY);
+    g.addColorStop(0, '#0b0b24'); g.addColorStop(0.6, '#3a2347'); g.addColorStop(1, '#c4684a');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, surfaceY);
+    var rnd = mulberry(5);
+    ctx.fillStyle = '#fff';
+    for (var i = 0; i < 30; i++) { var x = rnd() * W, y = rnd() * surfaceY * 0.7, tw2 = 0.4 + 0.6 * Math.abs(Math.sin(clock * 1.3 + i)); ctx.globalAlpha = 0.25 + 0.5 * tw2 * rnd(); ctx.fillRect(x, y, 1.4, 1.4); }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#f6e7b8'; ctx.beginPath(); ctx.arc(W * 0.36, Math.max(70, surfaceY * 0.36), 15 * S, 0, 6.3); ctx.fill();
+    ctx.fillStyle = '#1b1020';
+    ctx.beginPath(); ctx.moveTo(0, surfaceY); ctx.lineTo(0, surfaceY - 22 * S);
+    for (var h = 0; h <= W; h += 20) ctx.lineTo(h, surfaceY - (16 + 12 * Math.sin(h * 0.018 + 1)) * S);
+    ctx.lineTo(W, surfaceY); ctx.fill();
+    function pine(px, s) { ctx.fillStyle = '#120a16'; for (var l = 0; l < 3; l++) { ctx.beginPath(); ctx.moveTo(px, surfaceY - (40 + l * 16) * s * S); ctx.lineTo(px - (16 - l * 3) * s * S, surfaceY - (12 + l * 16) * s * S); ctx.lineTo(px + (16 - l * 3) * s * S, surfaceY - (12 + l * 16) * s * S); ctx.fill(); } ctx.fillRect(px - 2 * s * S, surfaceY - 14 * s * S, 4 * s * S, 14 * s * S); }
+    pine(W * 0.12, 1.1); pine(W * 0.2, 0.8); pine(W * 0.9, 1.0); pine(W * 0.04, 0.9);
+  }
+
+  function drawItems(top, bottom) {
+    var d0 = cam + (top - feetY) / S, d1 = cam + (bottom - feetY) / S;
+    var k0 = Math.max(0, Math.floor(d0 / CH)), k1 = Math.floor(d1 / CH);
+    for (var k = k0; k <= k1; k++) {
+      var items = chunk(k);
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i], d = k * CH + it.y;
+        if (d < 2) continue;
+        var y = yOf(d); if (y < -24 || y > H + 24) continue;
+        var x = it.x * W, st = STRATA[stratumIndex(d)], col = st.c, sz = (2 + it.s * 5) * S;
+        if (it.t < 0.5) { ctx.globalAlpha = 0.28; ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(x, y, sz, sz * 0.7, it.u * 3, 0, 6.3); ctx.fill(); }
+        else if (it.t < 0.74) { ctx.globalAlpha = 0.5; ctx.fillStyle = col; ctx.fillRect(x, y, 1.6 * S + 0.4, 1.6 * S + 0.4); }
+        else if (it.t < 0.86) { ctx.globalAlpha = 0.28; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(x, y, sz * 1.1, sz * 0.8, it.u * 3, 0, 6.3); ctx.fill(); }
+        else if (it.t < 0.965) {
+          switch (st.kind) {
+            case 'roots': ctx.globalAlpha = 0.5; ctx.strokeStyle = '#d2a577'; ctx.lineWidth = 1.2 * S; ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + (it.u - .5) * 40 * S, y + 14 * S, x + (it.s - .5) * 30 * S, y + 32 * S); ctx.stroke(); break;
+            case 'pebbles': ctx.globalAlpha = 0.5; ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(x, y, sz * 1.9, sz * 1.4, it.u * 3, 0, 6.3); ctx.fill(); ctx.globalAlpha = 0.25; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(x - sz * .4, y - sz * .4, sz * .7, sz * .4, 0, 0, 6.3); ctx.fill(); break;
+            case 'fossils':
+              ctx.globalAlpha = 0.5; ctx.strokeStyle = col; ctx.lineWidth = 1.5 * S;
+              if (it.u < 0.6) { for (var r = 1; r <= 3; r++) { ctx.beginPath(); ctx.arc(x, y, r * 3.2 * S, 0.3, 0.3 + 4.6 + r * 0.2); ctx.stroke(); } }
+              else { ctx.lineWidth = 3 * S; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x - 8 * S, y); ctx.lineTo(x + 8 * S, y + 2 * S); ctx.stroke(); ctx.lineCap = 'butt'; }
+              break;
+            case 'crystals': {
+              ctx.globalAlpha = 0.85; ctx.fillStyle = col;
+              for (var q = 0; q < 3; q++) { var bx = x + (q - 1) * 5 * S, h = (8 + q % 2 * 6 + it.s * 8) * S; ctx.beginPath(); ctx.moveTo(bx - 3 * S, y + 6 * S); ctx.lineTo(bx, y + 6 * S - h); ctx.lineTo(bx + 3 * S, y + 6 * S); ctx.fill(); }
+              ctx.globalAlpha = 0.16 + 0.1 * Math.sin(clock * 2 + it.u * 9); ctx.beginPath(); ctx.arc(x, y, 16 * S, 0, 6.3); ctx.fill(); break;
+            }
+            case 'lava': { var rr = (10 + it.s * 20) * S, p = 0.55 + 0.35 * Math.sin(clock * 2 + it.u * 12); var g = ctx.createRadialGradient(x, y, 0, x, y, rr); g.addColorStop(0, col); g.addColorStop(1, 'rgba(255,120,30,0)'); ctx.globalAlpha = p; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, rr, 0, 6.3); ctx.fill(); break; }
+            case 'mushrooms': ctx.globalAlpha = 0.9; ctx.fillStyle = '#9ff7ea'; ctx.fillRect(x - 1 * S, y, 2 * S, 8 * S); ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(x, y, (5 + it.s * 4) * S, 4 * S, 0, Math.PI, 0); ctx.fill(); ctx.globalAlpha = 0.14 + 0.1 * Math.sin(clock * 1.7 + it.u * 8); ctx.beginPath(); ctx.arc(x, y, 18 * S, 0, 6.3); ctx.fill(); break;
+            case 'stars': ctx.globalAlpha = 0.4 + 0.6 * Math.abs(Math.sin(clock * 1.5 + it.u * 20)); ctx.fillStyle = '#fff'; ctx.fillRect(x, y, 2 * S, 2 * S); if (it.s > 0.7) { ctx.fillRect(x - 3 * S, y + 0.5 * S, 8 * S, 1); ctx.fillRect(x + 0.5 * S, y - 3 * S, 1, 8 * S); } break;
+          }
+        } else {
+          var tw3 = 0.5 + 0.5 * Math.sin(clock * 3 + it.u * 20), oc = it.s < 0.4 ? '#ffd24a' : it.s < 0.7 ? '#7ff0ff' : '#ff8aa0';
+          ctx.globalAlpha = 0.9; ctx.fillStyle = oc; ctx.beginPath(); ctx.moveTo(x, y - 4 * S); ctx.lineTo(x + 3 * S, y); ctx.lineTo(x, y + 4 * S); ctx.lineTo(x - 3 * S, y); ctx.fill();
+          ctx.globalAlpha = 0.25 * tw3; ctx.beginPath(); ctx.arc(x, y, 11 * S, 0, 6.3); ctx.fill();
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawStrata(surfaceY) {
+    for (var i = 0; i < STRATA.length; i++) {
+      var st = STRATA[i];
+      var y0 = Math.max(surfaceY, yOf(st.at)), y1 = i + 1 < STRATA.length ? yOf(STRATA[i + 1].at) : H + 10;
+      if (y1 < 0 || y0 > H) continue;
+      var g = ctx.createLinearGradient(0, yOf(st.at), 0, i + 1 < STRATA.length ? yOf(STRATA[i + 1].at) : yOf(st.at) + 900);
+      g.addColorStop(0, mix(st.b, st.a, 0.1)); g.addColorStop(1, st.a);
+      ctx.fillStyle = g; ctx.fillRect(0, y0, W, Math.max(0, y1 - y0) + 1);
+    }
+    drawItems(surfaceY, H);
+    // seams
+    for (var j = 0; j < STRATA.length; j++) {
+      var sy = yOf(STRATA[j].at);
+      if (j > 0 && sy > -4 && sy < H + 4) {
+        var sg = ctx.createLinearGradient(0, sy, 0, sy + 14 * S); sg.addColorStop(0, 'rgba(0,0,0,.35)'); sg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = sg; ctx.fillRect(0, sy, W, 14 * S);
+        ctx.fillStyle = STRATA[j].c; ctx.globalAlpha = 0.5; ctx.fillRect(0, sy - 1, W, 2); ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  function drawTunnel(surfaceY) {
+    var bottom = feetY + 8 * S, left = cx - tw, right = cx + tw;
+    var top = Math.max(-4, surfaceY);
+    var g = ctx.createLinearGradient(left, 0, right, 0);
+    g.addColorStop(0, '#090505'); g.addColorStop(0.5, '#130b0a'); g.addColorStop(1, '#090505');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(left, top); ctx.lineTo(left, bottom - 16 * S); ctx.quadraticCurveTo(left, bottom, cx, bottom); ctx.quadraticCurveTo(right, bottom, right, bottom - 16 * S); ctx.lineTo(right, top); ctx.closePath(); ctx.fill();
+    // wall edge
+    var st = STRATA[stratumIndex(cam)];
+    ctx.strokeStyle = st.c; ctx.globalAlpha = 0.28; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(left, top); ctx.lineTo(left, bottom - 16 * S); ctx.moveTo(right, top); ctx.lineTo(right, bottom - 16 * S); ctx.stroke(); ctx.globalAlpha = 1;
+    // timber beams every 120 m
+    var dTop = cam + (top - feetY) / S;
+    for (var d = Math.max(60, Math.ceil(dTop / 120) * 120); d < cam; d += 120) {
+      var by = yOf(d); if (by < top || by > bottom - 12 * S) continue;
+      ctx.fillStyle = '#5e3d22'; ctx.fillRect(left - 3, by, tw * 2 + 6, 5 * S);
+      ctx.fillStyle = '#8b5d34'; ctx.fillRect(left - 3, by, tw * 2 + 6, 1.5);
+      ctx.fillStyle = '#4a2f1a'; ctx.fillRect(left - 3, by, 5 * S, 22 * S); ctx.fillRect(right - 2 * S, by, 5 * S, 22 * S);
+    }
+    // trophies embedded in the wall
+    var tr = api.getTrophies();
+    for (var i = 0; i < tr.length; i++) {
+      var ty = yOf(tr[i][0]); if (ty < top || ty > bottom - 10) continue;
+      var tx = cx + (tr[i][2] > 0 ? 1 : -1) * (tw + 12 * S), col = TIER_COLORS[tr[i][1]], tw4 = 0.5 + 0.5 * Math.sin(clock * 2.5 + i * 1.7);
+      ctx.globalAlpha = 0.18 + 0.2 * tw4; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(tx, ty, 14 * S, 0, 6.3); ctx.fill();
+      ctx.globalAlpha = 1; ctx.beginPath(); ctx.moveTo(tx, ty - 6 * S); ctx.lineTo(tx + 5 * S, ty); ctx.lineTo(tx, ty + 6 * S); ctx.lineTo(tx - 5 * S, ty); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.moveTo(tx, ty - 6 * S); ctx.lineTo(tx - 5 * S, ty); ctx.lineTo(tx - 1 * S, ty - 1 * S); ctx.fill();
+    }
+  }
+
+  function drawMole(t) {
+    var s = S, dig = digging, sw = dig ? Math.sin(t * 15) : Math.sin(t * 1.6) * 0.12;
+    var bob = dig ? 0 : Math.sin(t * 2) * 1.2, shake = dig ? Math.sin(t * 70) * 1.4 : 0;
+    ctx.save(); ctx.translate(cx + shake, feetY - 50 * s + bob); ctx.scale(s, s);
+    function ell(x, y, rx, ry, fill, rot) { ctx.fillStyle = fill; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot || 0, 0, 6.3); ctx.fill(); }
+    // arms behind
+    function paw(side, off) {
+      var sx = side * 24, px = side * (37 + (dig ? side * 0 : 0)), py = 26 + off * 11;
+      ctx.strokeStyle = '#463a4c'; ctx.lineWidth = 13; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(sx, 4); ctx.lineTo(px, py - 6); ctx.stroke();
+      ctx.save(); ctx.translate(px, py); ctx.rotate(side * (-0.25 - off * 0.25));
+      ell(0, 0, 11, 15, '#f2a8b6'); ctx.strokeStyle = '#c97a8a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(0, 0, 11, 15, 0, 0, 6.3); ctx.stroke();
+      ctx.fillStyle = '#fff1e0'; for (var c = -1; c <= 1; c++) { ctx.beginPath(); ctx.moveTo(c * 6 - 2.6, 13); ctx.lineTo(c * 6, 24); ctx.lineTo(c * 6 + 2.6, 13); ctx.fill(); }
+      ctx.restore();
+    }
+    // feet
+    ell(-13, 49, 10, 5, '#e79aa9'); ell(13, 49, 10, 5, '#e79aa9');
+    // body
+    ell(0, 12, 31, 37, '#3d3243'); ell(0, 18, 19, 25, '#5d4c63');
+    paw(-1, sw); paw(1, -sw);
+    // head
+    ell(0, -22, 25, 24, '#4a3d50');
+    // hat
+    ctx.fillStyle = '#ffb938'; ctx.beginPath(); ctx.arc(0, -31, 26, Math.PI, 0); ctx.fill();
+    ell(0, -31, 31, 6.5, '#e0991f'); ctx.fillStyle = '#ffd47a'; ctx.fillRect(-3.5, -57, 7, 14);
+    ctx.fillStyle = '#6b5a49'; ctx.beginPath(); ctx.arc(0, -46, 8.2, 0, 6.3); ctx.fill();
+    var fl = 0.85 + 0.15 * Math.sin(t * 9 + Math.sin(t * 3));
+    ctx.fillStyle = 'rgba(255,246,216,' + fl + ')'; ctx.beginPath(); ctx.arc(0, -46, 6, 0, 6.3); ctx.fill();
+    // star nose
+    ctx.strokeStyle = '#ff9fb2'; ctx.lineWidth = 2.3; ctx.lineCap = 'round';
+    for (var i = 0; i < 11; i++) { var a = (i / 11) * 6.2832 + 0.2, wob = Math.sin(t * 3 + i) * 0.1, L = 10 + (i % 2) * 2; ctx.beginPath(); ctx.moveTo(Math.cos(a) * 3, -12 + Math.sin(a) * 3); ctx.lineTo(Math.cos(a + wob) * L, -12 + Math.sin(a + wob) * L); ctx.stroke(); }
+    ell(0, -12, 4.6, 4.2, '#ff7f98');
+    // eyes
+    var blink = (Math.sin(t * 0.9) > 0.985) ? 0.3 : 1;
+    ctx.fillStyle = '#0c0709'; ctx.beginPath(); ctx.ellipse(-12, -26, 2.2, 2.2 * blink, 0, 0, 6.3); ctx.ellipse(12, -26, 2.2, 2.2 * blink, 0, 0, 6.3); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawRuler() {
+    ctx.fillStyle = 'rgba(6,3,3,.5)'; ctx.fillRect(0, 0, 42, H);
+    var step = 10, steps = [10, 20, 25, 50, 100, 250, 500, 1000, 2500];
+    for (var i = 0; i < steps.length; i++) { step = steps[i]; if (step * S >= 30) break; }
+    var dTop = Math.max(0, cam - feetY / S), dBot = cam + (H - feetY) / S;
+    ctx.font = '500 9px "IBM Plex Mono", ui-monospace, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    for (var d = Math.ceil(dTop / step) * step; d <= dBot; d += step) {
+      var y = yOf(d), major = (d / step) % 2 === 0;
+      ctx.fillStyle = 'rgba(245,235,217,' + (major ? 0.75 : 0.4) + ')'; ctx.fillRect(major ? 26 : 32, y, major ? 16 : 10, 1);
+      if (major && y > 12 && y < H - 8) { ctx.fillStyle = 'rgba(245,235,217,.7)'; ctx.fillText(fmt(d), 2, y - 7); }
+    }
+    ctx.fillStyle = '#ffb938'; ctx.beginPath(); ctx.moveTo(42, feetY - 6); ctx.lineTo(42, feetY + 6); ctx.lineTo(34, feetY); ctx.fill();
+    // stratum seam labels
+    ctx.font = '500 10px "IBM Plex Mono", ui-monospace, monospace';
+    for (var j = 1; j < STRATA.length; j++) {
+      var sy = yOf(STRATA[j].at);
+      if (sy > 14 && sy < H - 6) { ctx.fillStyle = 'rgba(0,0,0,.5)'; var txt = STRATA[j].name.toUpperCase() + '  ' + fmt(STRATA[j].at) + ' m'; var tw5 = ctx.measureText(txt).width; ctx.fillRect(W - tw5 - 18, sy - 15, tw5 + 12, 14); ctx.fillStyle = STRATA[j].c; ctx.textAlign = 'right'; ctx.fillText(txt, W - 12, sy - 8); ctx.textAlign = 'left'; }
+    }
+  }
+
+  function spawnDirt(n) {
+    var st = STRATA[stratumIndex(cam)];
+    for (var i = 0; i < n; i++) {
+      var side = Math.random() < 0.5 ? -1 : 1;
+      particles.push({ x: cx + side * (30 * S + Math.random() * 10), y: feetY - 4 * S, vx: side * (30 + Math.random() * 120), vy: -(70 + Math.random() * 190), life: 0, max: 0.5 + Math.random() * 0.5, sz: (2 + Math.random() * 3.5) * S, col: Math.random() < 0.5 ? st.c : st.b, rot: Math.random() * 6, g: 520 });
+    }
+  }
+  function burst(tier) {
+    var col = TIER_COLORS[tier], n = 14 + tier * 6;
+    for (var i = 0; i < n; i++) {
+      var a = Math.random() * 6.2832, sp = 60 + Math.random() * (120 + tier * 24);
+      particles.push({ x: cx, y: feetY - 18 * S, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40, life: 0, max: 0.7 + Math.random() * 0.7, sz: (2 + Math.random() * 3) * S, col: col, rot: 0, g: 80, spark: true });
+    }
+  }
+
+  function frame(ts) {
+    var dt = Math.min(0.05, (ts - lastT) / 1000 || 0.016); lastT = ts; clock += dt;
+    if (anim) {
+      var p = clamp((ts - anim.t0) / anim.dur, 0, 1), e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      cam = anim.from + (anim.to - anim.from) * e;
+      if (p >= 1) { cam = anim.to; anim = null; digging = false; }
+    }
+    if (digging) {
+      thudT -= dt; if (thudT <= 0) { Snd.thud(0.8); thudT = 0.16 + Math.random() * 0.06; }
+      spawnDirt(REDUCED ? 1 : 3);
+    }
+    // stratum events
+    var idx = stratumIndex(cam);
+    if (idx !== lastIdx) {
+      if (idx > lastIdx) { showBanner(idx); if (api.onStratum) api.onStratum(idx); }
+      lastIdx = idx; setStratumHud(idx);
+    }
+    var n = Math.floor(cam); if (n !== lastNum) { lastNum = n; hudNum.textContent = fmt(n); }
+
+    ctx.clearRect(0, 0, W, H);
+    var surfaceY = yOf(0);
+    drawStrata(Math.max(0, surfaceY));
+    if (surfaceY > 0) drawSky(surfaceY);
+    // vignette
+    var R = Math.max(W, H) * 0.8, vg = ctx.createRadialGradient(cx, feetY - 20, 20, cx, feetY - 20, R);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(0.5, 'rgba(0,0,0,.2)'); vg.addColorStop(1, 'rgba(0,0,0,.72)');
+    ctx.fillStyle = vg; ctx.fillRect(0, Math.max(0, surfaceY), W, H);
+    drawTunnel(surfaceY);
+    // lamp glow
+    var st = STRATA[idx], fl = 0.9 + 0.1 * Math.sin(clock * 11) * Math.sin(clock * 3.1);
+    var lg = ctx.createRadialGradient(cx, feetY - 40 * S, 4, cx, feetY - 30 * S, 190 * S);
+    lg.addColorStop(0, 'rgba(255,200,110,' + (0.36 * fl) + ')'); lg.addColorStop(1, 'rgba(255,170,60,0)');
+    ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = lg; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over';
+    // motes
+    if (motes.length < 14) motes.push({ x: cx + (Math.random() - .5) * tw * 1.6, y: feetY - Math.random() * 120 * S, vx: (Math.random() - .5) * 6, vy: -4 - Math.random() * 8, a: Math.random() });
+    ctx.fillStyle = '#ffe3a8';
+    for (var m = motes.length - 1; m >= 0; m--) {
+      var mo = motes[m]; mo.x += mo.vx * dt; mo.y += mo.vy * dt; mo.a -= dt * 0.18;
+      if (mo.a <= 0 || mo.y < -4) { motes.splice(m, 1); continue; }
+      ctx.globalAlpha = Math.min(0.5, mo.a) * 0.8; ctx.fillRect(mo.x, mo.y, 1.6, 1.6);
+    }
+    ctx.globalAlpha = 1;
+    drawMole(clock);
+    // particles
+    for (var i = particles.length - 1; i >= 0; i--) {
+      var q = particles[i]; q.life += dt; if (q.life >= q.max) { particles.splice(i, 1); continue; }
+      q.vy += q.g * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.rot += dt * 6;
+      var a = 1 - q.life / q.max;
+      ctx.globalAlpha = a; ctx.fillStyle = q.col;
+      if (q.spark) { ctx.globalCompositeOperation = 'lighter'; ctx.beginPath(); ctx.arc(q.x, q.y, q.sz * a, 0, 6.3); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
+      else { ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot); ctx.fillRect(-q.sz / 2, -q.sz / 2, q.sz, q.sz); ctx.restore(); }
+    }
+    ctx.globalAlpha = 1;
+    drawRuler();
+    requestAnimationFrame(frame);
+  }
+
+  function setStratumHud(idx) {
+    var st = STRATA[idx];
+    hudName.textContent = st.name; hudIdx.textContent = 'Stratum ' + (idx + 1) + ' of ' + STRATA.length;
+    wrap.style.setProperty('--sc', st.c);
+  }
+  var bannerTimer = 0;
+  function showBanner(idx) {
+    var st = STRATA[idx];
+    bn.textContent = st.name; bd.textContent = fmt(st.at) + ' m';
+    banner.style.setProperty('--sc', st.c);
+    banner.classList.remove('show'); void banner.offsetWidth; banner.classList.add('show');
+    clearTimeout(bannerTimer); bannerTimer = setTimeout(function () { banner.classList.remove('show'); }, 3000);
+  }
+
+  api.init = function () {
+    cv = $('cv'); ctx = cv.getContext('2d'); wrap = $('stage');
+    hudNum = $('depth-num'); hudName = $('stratum-name'); hudIdx = $('stratum-idx'); banner = $('banner'); bn = $('b-n'); bd = $('b-d');
+    resize();
+    if (window.ResizeObserver) new ResizeObserver(resize).observe(wrap); else window.addEventListener('resize', resize);
+    requestAnimationFrame(function (ts) { lastT = ts; frame(ts); });
+  };
+  api.snap = function (d) { cam = d; anim = null; digging = false; lastIdx = stratumIndex(d); setStratumHud(lastIdx); lastNum = -1; };
+  api.digTo = function (d, ms) {
+    var dur = REDUCED ? 350 : ms;
+    anim = { from: cam, to: d, t0: performance.now(), dur: dur }; digging = true; thudT = 0;
+  };
+  api.finish = function () { if (anim) { cam = anim.to; anim = null; digging = false; } };
+  api.isDigging = function () { return digging; };
+  api.depth = function () { return cam; };
+  api.burst = burst;
+  api.visible = function () { return cv && cv.offsetParent !== null; };
+  return api;
+})();
+
+var TIER_COLORS = ['#a99d90', '#d9803f', '#d5dde8', '#f7c948', '#b684ff', '#ff5468', '#74e8ff', '#ff6fcb'];
+
+/* ───────────── Prompt picker: endless, no repeats until everything has been seen ───────────── */
+var picker = {
+  bag: [], recent: [], used: {}, n: 0,
+  next: function () {
+    var self = this;
+    if (!this.bag.length) {
+      var ids = shuffle(DATA.map(function (c) { return c.id; }));
+      var tail = ids.filter(function (id) { return self.recent.indexOf(id) >= 0; });
+      this.bag = ids.filter(function (id) { return self.recent.indexOf(id) < 0; }).concat(tail);
+    }
+    var id = this.bag.shift();
+    this.recent.push(id); if (this.recent.length > 10) this.recent.shift();
+    var c = DATA.filter(function (x) { return x.id === id; })[0];
+    var vs = variantsOf(c), pool = [], total = 0, k;
+    for (var i = 0; i < vs.length; i++) {
+      k = id + ':' + vs[i].t + (vs[i].v || '');
+      if (this.used[k]) continue;
+      var w = vs[i].t === 'plain' ? 3 : 1;
+      if (this.n < 2 && vs[i].t !== 'plain') continue;
+      pool.push([vs[i], w, k]); total += w;
+    }
+    if (!pool.length) { for (var j = 0; j < vs.length; j++) delete this.used[id + ':' + vs[j].t + (vs[j].v || '')]; return this.next2(c, vs); }
+    var r = Math.random() * total, chosen = pool[0];
+    for (var m = 0; m < pool.length; m++) { r -= pool[m][1]; if (r <= 0) { chosen = pool[m]; break; } }
+    this.used[chosen[2]] = 1; this.n++;
+    return buildPrompt(c, chosen[0]);
+  },
+  next2: function (c, vs) { var v = pick(vs); this.n++; return buildPrompt(c, v); }
+};
+
+/* ───────────── Game ───────────── */
+var G = { mode: 'intro', prompt: null, lantern: false, pending: null, last: null, modal: null, lastFocus: null };
+var MSGS_NONE = [
+  'Clink. That is solid rock, not in this vein.',
+  'Nothing by that name down here. Check the spelling.',
+  'Your pick glances off. That is not in this vein.',
+  'Dead end. That is not on the survey.'
+];
+
+function run() { return store.d.run; }
+function stats() { return store.d.stats; }
+
+function renderPips() {
+  var el = $('pips'), r = run(), html = '';
+  for (var i = 0; i < 7; i++) {
+    var t = r.shiftFinds[i];
+    html += t === undefined ? '<i></i>' : '<i class="on" style="--pc:' + TIER_COLORS[t] + '"></i>';
+  }
+  el.innerHTML = html;
+  el.setAttribute('aria-label', 'Shift progress: ' + r.shiftFinds.length + ' of 7');
+  $('shift-no').textContent = r.shiftNo;
+  var st = $('streak');
+  if (r.streak > 0) { st.hidden = false; $('streak-v').textContent = 'x' + r.streak + '  +' + Math.min(r.streak, 5) * 10 + '%'; } else st.hidden = true;
+  $('best').textContent = 'Best ' + fmt(stats().best) + ' m';
+  renderLedger();
+}
+
+function renderLedger() {
+  var R = run(), L = R.shiftLog || [], ol = $('ledger');
+  var sum = 0; L.forEach(function (x) { sum += x.m; });
+  $('ledger-sum').textContent = L.length ? '+' + fmt(sum) + ' m' : '';
+  if (!L.length) { ol.innerHTML = '<li class="empty" style="display:block">Finds from this shift will be logged here. Seven answers close a shift.</li>'; return; }
+  ol.innerHTML = L.slice().reverse().map(function (x) {
+    return '<li>' + gemSVG(x.t) + '<span class="la"><b>' + esc(x.a) + '</b><span class="lq">' + esc(x.n) + '</span></span><span class="lm">+' + fmt(x.m) + ' m</span></li>';
+  }).join('');
+}
+
+function renderPrompt() {
+  var p = G.prompt, parts = promptParts(p), q = esc(parts.q), n = esc(parts.noun);
+  var html = q.replace(n, '<strong>' + n + '</strong>');
+  if (parts.mod) html += ' <span class="mod">' + esc(parts.mod.label) + ' <b>' + esc(parts.mod.val) + '</b></span>';
+  $('p-text').innerHTML = html;
+  $('p-group').textContent = p.cat.g;
+  $('p-count').textContent = 'Prompt ' + (run().promptNo);
+  $('p-sub').textContent = p.size + ' answers hide in this vein.';
+  $('msg').innerHTML = ''; $('msg').className = 'msg';
+  $('answer').value = ''; $('answer').disabled = false; $('btn-dig').disabled = false;
+  $('btn-lantern').disabled = false; $('btn-lantern').textContent = 'Light the lantern (-20% depth)';
+  $('btn-skip').disabled = false;
+  $('card-prompt').hidden = false; $('card-result').hidden = true;
+  renderPips();
+}
+
+function newPrompt(focus) {
+  run().promptNo++;
+  G.prompt = picker.next(); G.lantern = false; G.pending = null; G.last = null; G.mode = 'prompt';
+  renderPrompt(); store.save();
+  if (focus !== false) setTimeout(function () { try { $('answer').focus({ preventScroll: false }); } catch (e) { } }, 30);
+  $('card-prompt').scrollIntoView && $('card-prompt').scrollIntoView({ block: 'nearest' });
+}
+
+function setMsg(html, info) { var m = $('msg'); m.className = 'msg' + (info ? ' info' : ''); m.innerHTML = html; }
+
+function submit(text) {
+  if (G.mode !== 'prompt') return;
+  Snd.unlock();
+  var p = G.prompt, res;
+  if (G.pending) { res = G.pending; res.s = 'ok'; }
+  else res = resolve(p, text);
+  G.pending = null;
+  if (res.s === 'empty') { setMsg('Type an answer to dig.', true); return; }
+  if (res.s === 'none') { Snd.nope(); setMsg(esc(pick(MSGS_NONE)), false); return; }
+  if (res.s === 'filter') {
+    Snd.nope();
+    var pr = promptParts(p);
+    setMsg(esc(res.item.name) + ' is real, but it does not fit: ' + esc(pr.mod ? pr.mod.label + ' ' + pr.mod.val : 'this prompt') + '.', false); return;
+  }
+  if (res.s === 'confirm') {
+    G.pending = res; Snd.blip();
+    setMsg('Did you mean <button type="button" id="confirm-chip">' + esc(res.item.name) + '</button> Press Enter to confirm.', true);
+    $('confirm-chip').addEventListener('click', function () { submit(res.item.name); });
+    return;
+  }
+  strike(res);
+}
+
+function strike(res) {
+  var p = G.prompt, idx = res.idx, tier = p.tier[idx], r = p.r[idx], R = run(), S = stats();
+  var streakBefore = R.streak;
+  var g = gainFor(p, idx, streakBefore, G.lantern);
+  var qual = tier >= STREAK_TIER;
+  R.streak = qual ? R.streak + 1 : 0;
+  var prevDepth = R.depth;
+  R.depth += g.total; R.answered++; R.shiftFinds.push(tier);
+  R.shiftLog.push({ a: res.item.name, n: p.cat.n, t: tier, m: g.total });
+  var side = Math.random() < 0.5 ? -1 : 1;
+  R.trophies.push([Math.round(prevDepth + g.total * 0.5), tier, side]); if (R.trophies.length > 90) R.trophies.shift();
+  S.total += g.total; S.answers++; S.byTier[tier]++; if (tier === HEART) S.hearts++;
+  if (R.depth > S.best) S.best = R.depth;
+  if (R.streak > S.bestStreak) S.bestStreak = R.streak;
+  var willIdx = stratumIndex(R.depth); if (willIdx > S.deepestStratum) S.deepestStratum = willIdx;
+  var rare = store.d.rare; rare.push({ q: promptParts(p).q + (promptParts(p).mod ? ' (' + promptParts(p).mod.label + ' ' + promptParts(p).mod.val + ')' : ''), a: res.item.name, r: Math.round(r * 1000) / 1000, t: tier, d: Math.round(R.depth) });
+  rare.sort(function (a, b) { return (b.t - a.t) || (b.r - a.r); }); store.d.rare = rare.slice(0, 30);
+  store.save();
+
+  G.mode = 'result';
+  G.last = { res: res, idx: idx, tier: tier, g: g, streakBefore: streakBefore, qual: qual };
+  $('answer').disabled = true; $('btn-dig').disabled = true; $('btn-lantern').disabled = true; $('btn-skip').disabled = true;
+  Stage.digTo(R.depth, clamp(900 + g.total * 4.5, 900, 2800));
+  Snd.chime(tier);
+  setTimeout(function () { Stage.burst(tier); }, 380);
+  renderResult();
+  renderPips();
+  $('card-result').scrollIntoView && $('card-result').scrollIntoView({ block: 'nearest', behavior: REDUCED ? 'auto' : 'smooth' });
+  setTimeout(function () { try { $('btn-next').focus({ preventScroll: true }); } catch (e) { } }, 60);
+}
+
+function rarityBar(p, idx) {
+  var m = p.size, n = Math.min(m, 120), s = '<svg class="rbar" viewBox="0 0 300 30" preserveAspectRatio="none" aria-hidden="true">';
+  var w = 300 / n;
+  for (var k = 0; k < n; k++) { var j = n === m ? k : Math.round(k * (m - 1) / (n - 1)); s += '<rect x="' + (k * w + 0.4).toFixed(2) + '" y="14" width="' + Math.max(0.8, w - 0.8).toFixed(2) + '" height="10" fill="var(--f' + p.tier[j] + ')" opacity=".75"/>'; }
+  var mx = m > 1 ? idx / (m - 1) * 300 : 150; mx = clamp(mx, 4, 296);
+  s += '<path d="M' + (mx - 5) + ' 1h10l-5 9z" fill="#f5ebd9"/><rect x="' + (mx - 1) + '" y="10" width="2" height="16" fill="#f5ebd9"/>';
+  return s + '</svg>';
+}
+
+function renderResult() {
+  var L = G.last, p = G.prompt, it = L.res.item, tier = L.tier, T = TIERS[tier], g = L.g;
+  var card = $('card-result');
+  card.style.setProperty('--c', TIER_COLORS[tier]);
+  $('heart-banner').hidden = tier !== HEART;
+  $('res-gem').innerHTML = gemSVG(tier);
+  $('res-find').textContent = T.name;
+  $('res-answer').textContent = it.name;
+  var note = $('res-note');
+  note.hidden = false; note.textContent = (L.res.read ? 'Read as ' + it.name + '. ' : '') + T.blurb;
+  var m = p.size, below = Math.floor(100 * L.idx / m);
+  $('res-rank').textContent = tier === HEART ? 'The deepest vein in this prompt. Rarer than ' + below + '% of ' + m + ' answers.' : 'Rarer than ' + below + '% of the ' + m + ' answers in this vein.';
+  $('res-bar').innerHTML = rarityBar(p, L.idx);
+  var mods = [];
+  if (g.mult > 1) mods.push('streak x' + g.mult.toFixed(1));
+  if (g.pen < 1) mods.push('lantern -20%');
+  if (g.bonus) mods.push('Heartstone +' + g.bonus);
+  $('res-mods').textContent = (mods.length ? mods.join('  ·  ') : 'base ' + g.base + ' m');
+  $('res-m').textContent = '+0 m';
+  countUp($('res-m'), g.total);
+  var d = [];
+  var top = p.subset.slice(0, 3).map(function (x) { return x.name; }).join(', ');
+  d.push('<dt>Everyone says</dt><dd>' + esc(top) + '</dd>');
+  if (tier === HEART) d.push('<dt>You found it</dt><dd class="gemline">' + esc(it.name) + '</dd>');
+  else d.push('<dt>Deepest vein</dt><dd class="gemline">' + esc(p.subset.slice(p.size - p.hearts).map(function (x) { return x.name; }).join(', ')) + '</dd>');
+  $('res-others').innerHTML = d.join('');
+  var last = run().shiftFinds.length >= 7;
+  $('btn-next').textContent = last ? 'Finish shift' : 'Next prompt';
+  $('res-live').textContent = T.name + '. ' + it.name + '. Rarer than ' + below + ' percent. Plus ' + g.total + ' meters.';
+  $('card-prompt').hidden = true; card.hidden = false;
+  card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
+}
+
+function countUp(el, to) {
+  var t0 = performance.now(), dur = REDUCED ? 1 : 700;
+  (function step(now) {
+    var p = clamp((now - t0) / dur, 0, 1), v = Math.round(to * (1 - Math.pow(1 - p, 3)));
+    el.textContent = '+' + fmt(v) + ' m';
+    if (p < 1) requestAnimationFrame(step);
+  })(t0);
+}
+
+function next() {
+  if (G.mode !== 'result') return;
+  Stage.finish();
+  var R = run();
+  if (R.shiftFinds.length >= 7) { showShift(); return; }
+  newPrompt();
+}
+
+function bestOfShift() { var b = 0; run().shiftFinds.forEach(function (t) { if (t > b) b = t; }); return b; }
+var SQUARES = ['🟫', '🟧', '⬜', '🟨', '🟪', '🟥', '🟦', '💎'];
+function shareText() {
+  var R = run(), gained = R.depth - R.shiftStart;
+  return 'MOLLION · shift ' + R.shiftNo + '\n' + R.shiftFinds.map(function (t) { return SQUARES[t]; }).join('') + '\n+' + fmt(gained) + ' m  →  ' + fmt(R.depth) + ' m  ·  ' + STRATA[stratumIndex(R.depth)].name;
+}
+
+function showShift() {
+  var R = run(), S = stats(), gained = R.depth - R.shiftStart;
+  S.shifts++; store.save();
+  $('shift-title').textContent = 'Shift ' + R.shiftNo + ' complete';
+  $('shift-finds').innerHTML = R.shiftFinds.map(function (t) { return gemSVG(t); }).join('');
+  $('shift-stats').innerHTML =
+    '<div class="stat"><span class="k">This shift</span><span class="v">+' + fmt(gained) + ' m</span></div>' +
+    '<div class="stat"><span class="k">Total depth</span><span class="v">' + fmt(R.depth) + ' m</span></div>' +
+    '<div class="stat"><span class="k">Best find</span><span class="v">' + TIERS[bestOfShift()].name + '</span></div>' +
+    '<div class="stat"><span class="k">Stratum</span><span class="v">' + esc(STRATA[stratumIndex(R.depth)].name) + '</span></div>';
+  $('share-text').value = shareText();
+  openModal('m-shift');
+}
+
+function endShiftContinue() {
+  var R = run();
+  R.shiftNo++; R.shiftFinds = []; R.shiftLog = []; R.shiftStart = R.depth; store.save();
+  closeModal(); newPrompt();
+}
+
+function skip() {
+  if (G.mode !== 'prompt') return;
+  run().streak = 0; Snd.blip(); newPrompt();
+}
+
+function lantern() {
+  if (G.mode !== 'prompt' || G.lantern) return;
+  Snd.unlock();
+  var h = lanternHint(G.prompt);
+  if (!h) { setMsg('Nothing glints in this vein.', true); return; }
+  G.lantern = true; $('btn-lantern').disabled = true; $('btn-lantern').textContent = 'Lantern lit (-20% depth)';
+  setMsg('Something rare glints: starts with <b>' + esc(h.first) + '</b>, ' + h.len + ' letters.', true);
+  Snd.blip();
+}
+
+function newDig() {
+  var S = stats(); S.runs++;
+  store.d.run = store.fresh().run; store.save();
+  Stage.snap(0);
+  closeModal(); newPrompt(false); G.mode = 'prompt';
+}
+
+/* ── modals ── */
+function openModal(id) {
+  closeModal(true);
+  var m = $(id); m.hidden = false; G.modal = id; G.lastFocus = document.activeElement;
+  var f = m.querySelector('[data-autofocus]') || m.querySelector('button');
+  if (f) setTimeout(function () { try { f.focus(); } catch (e) { } }, 20);
+}
+function closeModal(quiet) {
+  if (!G.modal) return;
+  var m = $(G.modal); m.hidden = true;
+  var id = G.modal; G.modal = null;
+  if (!quiet && G.lastFocus && G.lastFocus.focus && id !== 'm-intro') { try { G.lastFocus.focus(); } catch (e) { } }
+}
+
+function showJournal() {
+  var S = stats(), R = run();
+  $('journal-stats').innerHTML =
+    '<div class="stat"><span class="k">Deepest dig</span><span class="v">' + fmt(S.best) + ' m</span></div>' +
+    '<div class="stat"><span class="k">This dig</span><span class="v">' + fmt(R.depth) + ' m</span></div>' +
+    '<div class="stat"><span class="k">Answers struck</span><span class="v">' + fmt(S.answers) + '</span></div>' +
+    '<div class="stat"><span class="k">Heartstones</span><span class="v">' + fmt(S.hearts) + '</span></div>' +
+    '<div class="stat"><span class="k">Best streak</span><span class="v">' + fmt(S.bestStreak) + '</span></div>' +
+    '<div class="stat"><span class="k">Deepest stratum</span><span class="v" style="font-size:15px">' + esc(STRATA[S.deepestStratum].name) + '</span></div>';
+  var rare = store.d.rare.slice(0, 12);
+  $('rare-list').innerHTML = rare.length ? rare.map(function (x) { return '<li>' + gemSVG(x.t) + '<div><div class="a">' + esc(x.a) + '</div><div class="q">' + esc(x.q) + '</div></div></li>'; }).join('') : '<li><div class="q" style="grid-column:1/-1">Nothing yet. Your rarest finds will be kept here.</div></li>';
+  $('journal-reset').textContent = 'Erase journal'; $('journal-reset').dataset.armed = '';
+  openModal('m-journal');
+}
+
+function copyShare() {
+  var txt = $('share-text').value, btn = $('shift-copy');
+  function done(ok) { btn.textContent = ok ? 'Copied' : 'Select the text above'; setTimeout(function () { btn.textContent = 'Copy result'; }, 1800); }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(txt).then(function () { done(true); }, function () { fallback(); }); return; }
+  } catch (e) { }
+  fallback();
+  function fallback() { try { var ta = $('share-text'); ta.focus(); ta.select(); done(document.execCommand('copy')); } catch (e) { done(false); } }
+}
+
+function setSound(on) {
+  store.d.sound = on; Snd.setOn(on); store.save();
+  var b = $('btn-sound'); b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.setAttribute('aria-label', on ? 'Sound on' : 'Sound off');
+  $('snd-waves').style.display = on ? '' : 'none';
+}
+
+/* ── boot ── */
+function boot() {
+  store.load();
+  Stage.getTrophies = function () { return run().trophies; };
+  Stage.onStratum = function () { Snd.strata(); };
+  Stage.init();
+  Stage.snap(run().depth);
+  setSound(store.d.sound);
+
+  $('form').addEventListener('submit', function (e) { e.preventDefault(); submit($('answer').value); });
+  $('answer').addEventListener('input', function () { if (G.pending) { G.pending = null; setMsg('', true); } });
+  $('btn-next').addEventListener('click', next);
+  $('btn-skip').addEventListener('click', skip);
+  $('btn-lantern').addEventListener('click', lantern);
+  $('btn-help').addEventListener('click', function () { Snd.unlock(); openModal('m-help'); });
+  $('btn-journal').addEventListener('click', function () { Snd.unlock(); showJournal(); });
+  $('btn-sound').addEventListener('click', function () { var on = !store.d.sound; setSound(on); if (on) { Snd.unlock(); Snd.blip(); } });
+  $('shift-go').addEventListener('click', endShiftContinue);
+  $('shift-copy').addEventListener('click', copyShare);
+  $('journal-new').addEventListener('click', function () { var b = $('journal-new'); if (b.dataset.armed) { b.dataset.armed = ''; b.textContent = 'Back to the surface'; newDig(); } else { b.dataset.armed = '1'; b.textContent = 'Tap again: restart at 0 m'; } });
+  $('journal-reset').addEventListener('click', function () {
+    var b = $('journal-reset');
+    if (b.dataset.armed) { var snd = store.d.sound; store.d = store.fresh(); store.d.sound = snd; store.save(); Stage.snap(0); closeModal(); newPrompt(false); G.mode = 'prompt'; }
+    else { b.dataset.armed = '1'; b.textContent = 'Tap again to erase'; }
+  });
+  document.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', function () { closeModal(); }); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && G.modal && G.modal !== 'm-intro' && G.modal !== 'm-shift') { closeModal(); return; }
+    if (e.key === 'Enter' && !G.modal && G.mode === 'result' && e.target.tagName !== 'BUTTON') { e.preventDefault(); next(); }
+  });
+  document.querySelectorAll('.modal').forEach(function (m) { m.addEventListener('click', function (e) { if (e.target === m && m.id !== 'm-intro' && m.id !== 'm-shift') closeModal(); }); });
+
+  // intro
+  var R = run();
+  if (R.shiftFinds.length >= 7) { R.shiftNo++; R.shiftFinds = []; R.shiftLog = []; R.shiftStart = R.depth; }
+  var has = R.depth > 0 || R.answered > 0;
+  var go = $('intro-go'), nw = $('intro-new');
+  go.textContent = has ? 'Continue  ·  ' + fmt(R.depth) + ' m' : 'Start digging';
+  nw.hidden = !has;
+  function begin() { Snd.unlock(); closeModal(); if (!G.prompt) newPrompt(); else { G.mode = 'prompt'; $('answer').focus(); } }
+  go.addEventListener('click', begin);
+  nw.addEventListener('click', function () { Snd.unlock(); newDig(); });
+  G.prompt = null;
+  // show the first prompt behind the intro so the page is complete at rest
+  R.promptNo = Math.max(0, R.promptNo - 0);
+  G.prompt = picker.next(); R.promptNo++; renderPrompt();
+  G.mode = 'prompt';
+  openModal('m-intro');
+  $('card-prompt').hidden = false;
+}
+
+window.__mollion = { G: G, store: store, submit: submit, next: next, Stage: Stage, picker: picker };
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+
+})();
+</script>
+
+</body></html>
